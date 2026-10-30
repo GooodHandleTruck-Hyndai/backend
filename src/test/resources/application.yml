@@ -1,0 +1,13 @@
+# 테스트(로컬 ./gradlew test, CI)는 MySQL 없이 메모리 DB(H2)로 돌아요
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+  docker:
+    compose:
+      enabled: false

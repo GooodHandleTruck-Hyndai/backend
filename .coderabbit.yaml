@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit AI 리뷰 설정
+language: "ko-KR"
+
+reviews:
+  profile: "chill"            # 사소한 지적은 줄이고 중요한 것 위주로
+  request_changes_workflow: false
+  high_level_summary: true    # PR 맨 위에 변경 요약
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false             # Draft PR 은 리뷰하지 않음
+  path_instructions:
+    - path: "src/main/java/**/*.java"
+      instructions: |
+        Spring Boot 4 / Java 17 프로젝트예요. 아래를 중점적으로 봐 주세요.
+        - 엔티티를 응답으로 그대로 내보내지 않고 DTO(record)로 변환하는지
+        - 컨트롤러에 비즈니스 로직이 들어가지 않았는지 (Controller → Service → Repository)
+        - @Transactional 범위와 readOnly 사용, N+1 쿼리 가능성
+        - 예외는 BusinessException + ErrorCode 로 던지고, 응답은 ApiResponse 로 감싸는지
+        - 비밀번호, API 키 같은 비밀값이 코드나 설정 파일에 하드코딩되지 않았는지
+    - path: "src/main/resources/**/*.yml"
+      instructions: |
+        운영용 비밀값(DB 비밀번호, 키)이 들어가 있으면 반드시 지적해 주세요.
+        로컬 개발용 값(compose.yaml 과 같은 sidong/sidong)은 괜찮아요.
+
+chat:
+  auto_reply: true
