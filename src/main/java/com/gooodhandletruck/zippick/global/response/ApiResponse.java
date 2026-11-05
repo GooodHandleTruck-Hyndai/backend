@@ -1,7 +1,7 @@
-package com.gooodhandletruck.sidong.global.response;
+package com.gooodhandletruck.zippick.global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.gooodhandletruck.sidong.global.error.ErrorCode;
+import com.gooodhandletruck.zippick.global.error.ErrorCode;
 
 /**
  * 모든 API 의 공통 응답 형식.

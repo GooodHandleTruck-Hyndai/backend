@@ -5,15 +5,15 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: sidong
-      MYSQL_USER: sidong
-      MYSQL_PASSWORD: sidong
+      MYSQL_DATABASE: zippick
+      MYSQL_USER: zippick
+      MYSQL_PASSWORD: zippick
       MYSQL_ROOT_PASSWORD: root
       TZ: Asia/Seoul
     ports:
       - "3307:3306" # PC에 깔린 MySQL(3306)과 안 겹치게 3307
     volumes:
-      - mysql-data:/var/lib/mysql
+      - zippick-mysql-data:/var/lib/mysql
 
 volumes:
-  mysql-data:
+  zippick-mysql-data:

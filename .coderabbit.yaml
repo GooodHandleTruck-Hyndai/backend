@@ -23,7 +23,7 @@ reviews:
     - path: "src/main/resources/**/*.yml"
       instructions: |
         운영용 비밀값(DB 비밀번호, 키)이 들어가 있으면 반드시 지적해 주세요.
-        로컬 개발용 값(compose.yaml 과 같은 sidong/sidong)은 괜찮아요.
+        로컬 개발용 값(compose.yaml 과 같은 zippick/zippick)은 괜찮아요.
 
 chat:
   auto_reply: true

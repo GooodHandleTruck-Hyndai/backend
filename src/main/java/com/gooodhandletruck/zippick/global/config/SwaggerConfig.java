@@ -1,4 +1,4 @@
-package com.gooodhandletruck.sidong.global.config;
+package com.gooodhandletruck.zippick.global.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -13,10 +13,10 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
     @Bean
-    public OpenAPI sidongOpenApi() {
+    public OpenAPI zippickOpenApi() {
         return new OpenAPI().info(new Info()
-                .title("시동 API")
-                .description("GooodHandleTruck · 주행 중 운전자를 돕는 차량용 서비스")
+                .title("집픽 API")
+                .description("GooodHandleTruck · 차 안에서 내 주변 건물 시세를 확인하는 플레오스 앱")
                 .version("v0.0.1"));
     }
 }

@@ -1,4 +1,4 @@
-package com.gooodhandletruck.sidong.global.entity;
+package com.gooodhandletruck.zippick.global.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
@@ -13,7 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * 생성/수정 시간이 필요한 엔티티는 이걸 상속해요.
  *
  * <pre>
- * public class Trip extends BaseTimeEntity { ... }
+ * public class Favorite extends BaseTimeEntity { ... }
  * </pre>
  */
 @Getter
