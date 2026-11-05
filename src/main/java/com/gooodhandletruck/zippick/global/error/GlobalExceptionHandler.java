@@ -1,6 +1,6 @@
-package com.gooodhandletruck.sidong.global.error;
+package com.gooodhandletruck.zippick.global.error;
 
-import com.gooodhandletruck.sidong.global.response.ApiResponse;
+import com.gooodhandletruck.zippick.global.response.ApiResponse;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

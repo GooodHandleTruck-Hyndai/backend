@@ -1,4 +1,4 @@
-package com.gooodhandletruck.sidong.global.config;
+package com.gooodhandletruck.zippick.global.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;

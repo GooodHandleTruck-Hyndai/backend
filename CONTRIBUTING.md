@@ -1,4 +1,4 @@
-# 시동 협업 가이드
+# 집픽 협업 가이드
 
 GooodHandleTruck 팀이 같은 방식으로 일하기 위한 규칙이에요. 짧게 유지하고, 바꾸고 싶은 규칙이 있으면 PR로 제안해 주세요.
 
@@ -14,7 +14,7 @@ GooodHandleTruck 팀이 같은 방식으로 일하기 위한 규칙이에요. �
 2. **main 에서 브랜치를 따요.**
    ```bash
    git switch main && git pull
-   git switch -c feature/#12-trip-api
+   git switch -c feature/#12-favorite-api
    ```
 3. **작업하고 커밋해요.** 커밋 규칙은 아래를 보세요.
 4. **PR 을 올려요.** 템플릿의 `Closes #12` 에 이슈 번호를 꼭 적어요.
@@ -28,9 +28,9 @@ GooodHandleTruck 팀이 같은 방식으로 일하기 위한 규칙이에요. �
 
 | 종류 | 언제 | 예시 |
 |---|---|---|
-| `feature` | 새 기능 | `feature/#12-trip-api` |
-| `fix` | 버그 수정 | `fix/#15-trip-n-plus-one` |
-| `refactor` | 동작 변화 없는 코드 개선 | `refactor/#20-split-trip-service` |
+| `feature` | 새 기능 | `feature/#12-favorite-api` |
+| `fix` | 버그 수정 | `fix/#15-nearby-n-plus-one` |
+| `refactor` | 동작 변화 없는 코드 개선 | `refactor/#20-split-building-service` |
 | `chore` | 빌드, 설정, 의존성 | `chore/#3-swagger-setup` |
 | `docs` | 문서 | `docs/#5-readme` |
 
@@ -59,8 +59,8 @@ GooodHandleTruck 팀이 같은 방식으로 일하기 위한 규칙이에요. �
 
 예시
 ```
-feat: 주행 기록 저장 API 추가
-fix: 주행 기록 조회 시 N+1 쿼리 수정
+feat: 건물 저장 API 추가
+fix: 주변 건물 조회 시 N+1 쿼리 수정
 chore: Spring Boot 4.0.9 로 업데이트
 ```
 
@@ -98,10 +98,10 @@ chore: Spring Boot 4.0.9 로 업데이트
 - 들여쓰기, 줄 길이 같은 기본 포맷은 `.editorconfig` 가 정해요. IntelliJ 에서 커밋 전에 **Ctrl+Alt+L**(코드 정리), **Ctrl+Alt+O**(import 정리)를 눌러 주세요.
 - 패키지 구조
   ```
-  com.gooodhandletruck.sidong
+  com.gooodhandletruck.zippick
   ├── global/          공통 (응답 형식, 예외 처리, 설정)
   └── domain/
-      └── trip/        기능 단위로 패키지를 나눠요
+      └── favorite/    기능 단위로 패키지를 나눠요
           ├── controller/  API 입구 (@RestController)
           ├── service/     비즈니스 로직 (@Service)
           ├── repository/  DB 접근 (JpaRepository)

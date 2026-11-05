@@ -1,6 +1,6 @@
 spring:
   application:
-    name: sidong
+    name: zippick
   profiles:
     active: local
 

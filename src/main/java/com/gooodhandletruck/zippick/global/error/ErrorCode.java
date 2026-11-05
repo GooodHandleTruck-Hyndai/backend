@@ -1,4 +1,4 @@
-package com.gooodhandletruck.sidong.global.error;
+package com.gooodhandletruck.zippick.global.error;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
  * 에러 코드 모음.
  *
  * 규칙: 공통은 C, 도메인별로 앞 글자를 정해서 번호를 붙여요.
- * 예) 운전자 D001, 주행 기록 T001 ...
+ * 예) 기기 D001, 저장 F001 ...
  * 새 도메인을 만들면 여기에 섹션을 추가해 주세요.
  */
 @Getter

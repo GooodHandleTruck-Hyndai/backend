@@ -1,4 +1,4 @@
-package com.gooodhandletruck.sidong.global.error;
+package com.gooodhandletruck.zippick.global.error;
 
 import lombok.Getter;
 

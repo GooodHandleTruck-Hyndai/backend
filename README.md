@@ -1,6 +1,6 @@
-# 시동 (Sidong) 백엔드
+# 집픽 (Zippick) 백엔드
 
-> GooodHandleTruck · 주행 중 운전자를 돕는 차량용 서비스의 API 서버
+> GooodHandleTruck · 차 안에서 내 주변 건물 시세를 확인하는 플레오스 앱의 API 서버
 
 - Spring Boot 4.0 · Java 17 · MySQL 8.4 · JPA · Swagger
 - 협업 규칙(브랜치, 커밋, PR): [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -17,7 +17,7 @@
 
 ### 실행
 1. IntelliJ → **Open** → 이 폴더를 열고 Gradle Sync 가 끝날 때까지 기다려요.
-2. `SidongApplication` 을 실행(▶)해요.
+2. `ZippickApplication` 을 실행(▶)해요.
    - Spring Boot 가 `compose.yaml` 의 MySQL 컨테이너를 **자동으로 띄워요.** DB 를 따로 설치할 필요가 없어요.
 3. 브라우저에서 확인해요.
    - 서버 상태: http://localhost:8080/health → `{"status":"ok"}`
@@ -34,8 +34,8 @@
 |---|---|
 | Host | `localhost` |
 | Port | `3307` (PC에 깔린 MySQL 과 안 겹치게) |
-| Database | `sidong` |
-| User / Password | `sidong` / `sidong` |
+| Database | `zippick` |
+| User / Password | `zippick` / `zippick` |
 
 IntelliJ 의 Database 탭이나 DBeaver 로 붙어서 볼 수 있어요. 데이터는 Docker 볼륨에 남아서, 서버를 껐다 켜도 유지돼요.
 
@@ -54,9 +54,9 @@ IntelliJ 의 Database 탭이나 DBeaver 로 붙어서 볼 수 있어요. 데이�
 ```
 
 ```java
-@GetMapping("/trips/{id}")
-public ApiResponse<TripResponse> getTrip(@PathVariable Long id) {
-    return ApiResponse.ok(tripService.getTrip(id));
+@GetMapping("/buildings/{buildingId}")
+public ApiResponse<BuildingResponse> getBuilding(@PathVariable String buildingId) {
+    return ApiResponse.ok(buildingService.getBuilding(buildingId));
 }
 ```
 
@@ -65,7 +65,7 @@ public ApiResponse<TripResponse> getTrip(@PathVariable Long id) {
 ```java
 throw new BusinessException(ErrorCode.NOT_FOUND);
 ```
-새 에러가 필요하면 `ErrorCode` 에 추가해요. 공통 에러는 `C`, 도메인 에러는 도메인마다 앞 글자를 정해요(예: 주행 기록 `T001`).
+새 에러가 필요하면 `ErrorCode` 에 추가해요. 공통 에러는 `C`, 도메인 에러는 도메인마다 앞 글자를 정해요(예: 저장 `F001`).
 
 | 상황 | HTTP 상태 | code |
 |---|---|---|
@@ -79,8 +79,8 @@ throw new BusinessException(ErrorCode.NOT_FOUND);
 ## 📁 폴더 구조
 
 ```
-src/main/java/com/gooodhandletruck/sidong/
-├── SidongApplication.java
+src/main/java/com/gooodhandletruck/zippick/
+├── ZippickApplication.java
 ├── global/
 │   ├── response/ApiResponse.java          공통 응답 형식
 │   ├── error/                             ErrorCode, BusinessException, GlobalExceptionHandler
