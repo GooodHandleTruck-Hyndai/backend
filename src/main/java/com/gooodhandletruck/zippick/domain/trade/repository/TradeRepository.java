@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** 실거래 조회 (#4 에서 추가, #6 에서 건물 상세용 조회 추가) */
+/** 실거래 조회 (#4 에서 추가, #6·#16 에서 건물 상세·실거래 내역 조회, #8 에서 existsBySggCdAndDealYm 추가) */
 public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     /** 재수집 때 (구, 계약월) 한 달 치 기존 거래를 불러와서 새로 받은 데이터와 비교해요 */
@@ -31,4 +31,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     /** 그 구에서 가장 최근에 수집된 시각. 수집 이력(5·12번 배치)이 생기기 전까지 자료 기준일로 써요 */
     @Query("select max(t.createdAt) from Trade t where t.sggCd = :sggCd")
     LocalDateTime findLatestCollectedAt(@Param("sggCd") String sggCd);
+
+    /** 그 달에 저장된 거래가 있는지 — 국토부가 0건을 보냈을 때 통째 삭제를 막는 데 써요 (#8) */
+    boolean existsBySggCdAndDealYm(String sggCd, String dealYm);
 }

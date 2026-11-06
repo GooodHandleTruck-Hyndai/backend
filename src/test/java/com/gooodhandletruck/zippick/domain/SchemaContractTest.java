@@ -100,8 +100,8 @@ class SchemaContractTest {
     }
 
     @ParameterizedTest(name = "{0}.exclu_use_ar = DECIMAL({1},{2})")
-    @CsvSource({"trades, 7, 2"})
-    void 전용면적은_소수_2자리_숫자다(String table, int precision, int scale) throws SQLException {
+    @CsvSource({"trades, 9, 4"}) // #8: 국토부 원본이 소수 4자리까지 와서 반올림 없이 저장
+    void 전용면적은_소수_4자리까지_저장한다(String table, int precision, int scale) throws SQLException {
         ColumnInfo info = columns(table).get(norm("exclu_use_ar"));
 
         assertThat(info.size()).isEqualTo(precision);
