@@ -3,6 +3,7 @@ package com.gooodhandletruck.zippick.domain.trade.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.gooodhandletruck.zippick.domain.building.entity.BuildingType;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitFixtures;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitTradeItem;
 import java.math.BigDecimal;
@@ -91,6 +92,39 @@ class MolitTradeNormalizerTest {
     }
 
     // ---- 지문 ----
+
+    @Test
+    void 아파트_지문은_이미_저장된_값과_같다() {
+        // #8 때 로컬 MySQL 에 저장된 실제 값(2026-11-07 확인). 지문 규칙을 바꾸다 이 값이 바뀌면
+        // 이미 저장된 아파트 거래가 재수집 때 전부 삭제+추가로 잡혀요(17번 새 신고 알림도 오작동)
+        assertThat(normalize(List.of(MAPO.get(0))).get(0).fingerprint())
+                .isEqualTo("b93a565e9732d7caaa9e83c5ce6f1a89618c5dbdb5cb39c50976502780c2cb55");
+    }
+
+    @Test
+    void 값이_같아도_오피스텔과_아파트는_지문이_다르다() {
+        // UNIQUE(지문, 순번)이 유형을 넘어 부딪히지 않게 (#27)
+        String apt = MolitTradeNormalizer.normalize(BuildingType.APT, "11440", "202608", List.of(MAPO.get(0)))
+                .get(0).fingerprint();
+        String officetel = MolitTradeNormalizer.normalize(BuildingType.OFFICETEL, "11440", "202608",
+                List.of(MAPO.get(0))).get(0).fingerprint();
+
+        assertThat(officetel).isNotEqualTo(apt).hasSize(64);
+    }
+
+    @Test
+    void 실제_오피스텔_응답_54건을_정리한다() {
+        List<NormalizedTrade> rows = MolitTradeNormalizer.normalize(BuildingType.OFFICETEL, "11440", "202608",
+                MolitFixtures.mapoOfficetel202608().items());
+
+        assertThat(rows).hasSize(54);
+        assertThat(rows.get(0).aptNm()).isEqualTo("마포 한화 오벨리스크"); // offiNm 이 건물명 자리로
+        assertThat(rows).allSatisfy(r -> {
+            assertThat(r.aptDong()).isNull();
+            assertThat(r.rgstDate()).isNull();
+        });
+        assertThat(rows.stream().map(NormalizedTrade::tradeKey).distinct()).hasSize(54);
+    }
 
     @Test
     void 같은_입력이면_지문이_항상_같다() {

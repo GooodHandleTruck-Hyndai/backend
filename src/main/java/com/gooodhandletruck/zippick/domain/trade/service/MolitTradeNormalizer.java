@@ -1,5 +1,6 @@
 package com.gooodhandletruck.zippick.domain.trade.service;
 
+import com.gooodhandletruck.zippick.domain.building.entity.BuildingType;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitTradeItem;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,7 @@ import java.util.Map;
  * - 정리: 앞뒤 공백 제거, 빈 값(국토부는 공백 한 칸)은 null, 금액 쉼표 제거, 날짜 변환
  * - 지문: 바뀌지 않는 8칸(sggCd, umdNm, jibun, aptNm, 계약일, 면적, 층, 금액)의 정리값 → SHA-256
  * - 순번: 같은 지문이 한 달 안에 여러 번 오면 응답 순서대로 1, 2, ...
+ * #27 변경: 오피스텔 등 아파트 외 유형은 지문 앞에 유형 이름을 붙여요 (아파트 지문은 그대로).
  * 한 건이라도 형식이 이상하면 IllegalArgumentException — 그 달은 통째로 반영하지 않아요 (부분 반영하면 비교·삭제가 틀어짐).
  */
 public final class MolitTradeNormalizer {
@@ -42,12 +44,18 @@ public final class MolitTradeNormalizer {
      * @param dealYm 요청한 계약월 — 응답의 계약 연·월이 다르면 실패 (다른 달을 지워 버리는 사고 방지)
      */
     public static List<NormalizedTrade> normalize(String sggCd, String dealYm, List<MolitTradeItem> items) {
+        return normalize(BuildingType.APT, sggCd, dealYm, items);
+    }
+
+    /** 유형별 (#27). 지문에 유형이 들어가서 아파트·오피스텔 거래가 같은 값이어도 섞이지 않아요 */
+    public static List<NormalizedTrade> normalize(BuildingType type, String sggCd, String dealYm,
+            List<MolitTradeItem> items) {
         List<NormalizedTrade> result = new ArrayList<>(items.size());
         Map<String, Integer> seqByFingerprint = new HashMap<>();
         for (int i = 0; i < items.size(); i++) {
             try {
                 Row row = clean(sggCd, dealYm, items.get(i));
-                String fingerprint = fingerprint(row);
+                String fingerprint = fingerprint(type, row);
                 int seq = seqByFingerprint.merge(fingerprint, 1, Integer::sum);
                 result.add(row.toNormalized(fingerprint, seq));
             } catch (IllegalArgumentException | DateTimeException e) {
@@ -102,7 +110,16 @@ public final class MolitTradeNormalizer {
     }
 
     static String fingerprint(Row row) {
-        String source = String.join(SEP,
+        return fingerprint(BuildingType.APT, row);
+    }
+
+    /**
+     * 아파트는 #8 때와 똑같은 문자열이라 이미 저장된 아파트 지문이 바뀌지 않아요 (바뀌면 재수집 때 전부 삭제+추가로 잡혀요).
+     * 다른 유형만 앞에 "OFFICETEL␟" 를 붙여요 (#27).
+     */
+    static String fingerprint(BuildingType type, Row row) {
+        String prefix = type == BuildingType.APT ? "" : type.name() + SEP;
+        String source = prefix + String.join(SEP,
                 row.sggCd, row.umdNm, row.jibun, row.aptNm,
                 row.dealDate.toString(),
                 // "84.90" 과 "84.9" 가 같은 지문이 되게 끝의 0 을 지우고, 지수 표기(8E+1) 없이 써요

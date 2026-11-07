@@ -1,5 +1,6 @@
 package com.gooodhandletruck.zippick.domain.trade.batch;
 
+import com.gooodhandletruck.zippick.domain.trade.client.MolitDataset;
 import com.gooodhandletruck.zippick.domain.trade.entity.CollectRun;
 import com.gooodhandletruck.zippick.domain.trade.entity.CollectStatus;
 import com.gooodhandletruck.zippick.domain.trade.service.TradeIngestService;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
  * 여러 구 × 최근 N개월을 한 달씩 적재 서비스(#8)로 반영해요. (#17 에서 추가)
  * 시연 지역 사전 저장(API 5번)과 재수집(API 12번)이 같이 써요 — 둘 다 "범위만 다른 같은 일"이라서.
  *
+ * #27 변경: 아파트·오피스텔(MolitDataset 전부)을 같은 구·기간으로 받아요.
  * 한 달이 실패해도 다음 달로 넘어가요. 실패한 달은 DB 가 그대로이고 수집 이력에 FAILED·SKIPPED 로 남아요.
  */
 @Slf4j
@@ -40,13 +42,15 @@ public class TradeCollectBatch {
         List<String> dealYms = recentMonths(today, months);
         List<CollectRun> runs = new ArrayList<>();
         for (String sggCd : sggCds) {
-            for (String dealYm : dealYms) {
-                try {
-                    runs.add(ingestService.collectMonth(sggCd, dealYm));
-                } catch (RuntimeException e) {
-                    // collectMonth 는 결과를 이력으로 돌려주고 던지지 않지만, 이력 저장 자체가 실패하는 경우(DB 끊김 등)에도
-                    // 남은 달은 계속 시도해요
-                    log.error("실거래 수집 중 예외 sggCd={} dealYm={}", sggCd, dealYm, e);
+            for (MolitDataset dataset : MolitDataset.values()) {
+                for (String dealYm : dealYms) {
+                    try {
+                        runs.add(ingestService.collectMonth(dataset.buildingType(), sggCd, dealYm));
+                    } catch (RuntimeException e) {
+                        // collectMonth 는 결과를 이력으로 돌려주고 던지지 않지만, 이력 저장 자체가 실패하는 경우(DB 끊김 등)에도
+                        // 남은 달은 계속 시도해요
+                        log.error("실거래 수집 중 예외 type={} sggCd={} dealYm={}", dataset, sggCd, dealYm, e);
+                    }
                 }
             }
         }

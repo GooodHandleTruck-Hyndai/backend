@@ -22,7 +22,7 @@ class MolitPropertiesTest {
     @Test
     void 키는_설정에서_읽고_나머지는_기본값을_쓴다() {
         assertThat(properties.serviceKey()).isEqualTo("from-env");
-        assertThat(properties.baseUrl()).isEqualTo("https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade");
+        assertThat(properties.baseUrl()).isEqualTo("https://apis.data.go.kr/1613000");
         assertThat(properties.pageSize()).isEqualTo(1000);
         assertThat(properties.maxPages()).isEqualTo(50);
         assertThat(properties.connectTimeout()).isEqualTo(Duration.ofSeconds(5));

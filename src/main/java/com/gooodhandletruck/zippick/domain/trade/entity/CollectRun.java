@@ -1,5 +1,6 @@
 package com.gooodhandletruck.zippick.domain.trade.entity;
 
+import com.gooodhandletruck.zippick.domain.building.entity.BuildingType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +20,7 @@ import lombok.NoArgsConstructor;
  * 실거래 수집 이력 (collect_runs). (구, 계약월) 한 번 수집할 때마다 한 줄. (#8 에서 추가)
  *
  * 5번(시연 지역 사전 저장)·12번(재수집) 배치가 언제 무엇을 얼마나 바꿨는지, 왜 건너뛰었는지 남겨요.
+ * #27 변경: 아파트·오피스텔 구분(building_type) 추가.
  * ERD 의 alert_held(알림 보류)는 쓰는 곳(17번 알림)이 생길 때 추가해요.
  *
  * #19 변경: 시작·종료 시각을 한국 시간(KstClock)으로 기록. 이 날짜가 화면의 자료 기준일이 되는데,
@@ -36,6 +38,11 @@ public class CollectRun {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** 어느 API 로 받았는지 — 같은 구·달을 아파트·오피스텔로 따로 받아요 (#27) */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "building_type", nullable = false, length = 10)
+    private BuildingType buildingType;
 
     @Column(name = "sgg_cd", nullable = false, length = 5)
     private String sggCd;
@@ -79,7 +86,8 @@ public class CollectRun {
     @Column(name = "finished_at")
     private LocalDateTime finishedAt;
 
-    private CollectRun(String sggCd, String dealYm) {
+    private CollectRun(BuildingType buildingType, String sggCd, String dealYm) {
+        this.buildingType = buildingType;
         this.sggCd = sggCd;
         this.dealYm = dealYm;
         this.status = CollectStatus.RUNNING;
@@ -87,7 +95,11 @@ public class CollectRun {
     }
 
     public static CollectRun start(String sggCd, String dealYm) {
-        return new CollectRun(sggCd, dealYm);
+        return start(BuildingType.APT, sggCd, dealYm);
+    }
+
+    public static CollectRun start(BuildingType buildingType, String sggCd, String dealYm) {
+        return new CollectRun(buildingType, sggCd, dealYm);
     }
 
     /** 국토부에서 받은 결과를 적어 둬요 (반영 여부와 상관없이) */

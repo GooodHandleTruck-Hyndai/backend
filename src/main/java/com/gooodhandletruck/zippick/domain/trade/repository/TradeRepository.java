@@ -1,5 +1,6 @@
 package com.gooodhandletruck.zippick.domain.trade.repository;
 
+import com.gooodhandletruck.zippick.domain.building.entity.BuildingType;
 import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** 실거래 조회 (#4 에서 추가, #6·#16 에서 건물 상세·실거래 내역 조회, #8 에서 existsBySggCdAndDealYm, #26 에서 가격 추이 집계 추가) */
+/** 실거래 조회 (#4 에서 추가, #6·#16 에서 건물 상세·실거래 내역 조회, #8 에서 existsBySggCdAndDealYm, #26 에서 가격 추이 집계, #27 에서 유형별 범위 조회 추가) */
 public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     /** 재수집 때 (구, 계약월) 한 달 치 기존 거래를 불러와서 새로 받은 데이터와 비교해요 */
@@ -60,4 +61,12 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
         Long getCnt();
     }
+
+    /**
+     * 재수집 비교 범위를 유형별로 (#27). 같은 구·달이라도 아파트 적재 때 오피스텔 거래를,
+     * 오피스텔 적재 때 아파트 거래를 "안 온 거래"로 지우면 안 돼서요.
+     */
+    List<Trade> findBySggCdAndDealYmAndBuilding_BuildingType(String sggCd, String dealYm, BuildingType buildingType);
+
+    boolean existsBySggCdAndDealYmAndBuilding_BuildingType(String sggCd, String dealYm, BuildingType buildingType);
 }
