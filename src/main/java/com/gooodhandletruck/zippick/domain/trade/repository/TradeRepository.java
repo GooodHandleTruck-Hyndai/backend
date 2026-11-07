@@ -2,7 +2,9 @@ package com.gooodhandletruck.zippick.domain.trade.repository;
 
 import com.gooodhandletruck.zippick.domain.building.entity.BuildingType;
 import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -10,7 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** 실거래 조회 (#4 에서 추가, #6·#16 에서 건물 상세·실거래 내역 조회, #8 에서 existsBySggCdAndDealYm, #26 에서 가격 추이 집계, #27 에서 유형별 범위 조회 추가) */
+/** 실거래 조회 (#4 에서 추가, #6·#16 에서 건물 상세·실거래 내역 조회, #8 에서 existsBySggCdAndDealYm, #26 에서 가격 추이 집계, #27 에서 유형별 범위 조회 추가, #35 에서 주변 건물 latestDeal 조회 추가) */
 public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     /** 재수집 때 (구, 계약월) 한 달 치 기존 거래를 불러와서 새로 받은 데이터와 비교해요 */
@@ -28,6 +30,13 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
      * Slice 는 size+1 건을 읽어 다음 쪽 여부만 알아내서, 전체 개수 쿼리가 따로 안 나가요 (#16 에서 추가)
      */
     Slice<Trade> findByBuildingIdAndCdealTypeIsNullOrderByDealDateDescIdDesc(Long buildingId, Pageable pageable);
+
+    /**
+     * 주변 건물(API 2번)의 latestDeal 후보. 여러 건물의 since 이후 거래를 한 번에 읽어요 (건물마다 쿼리하지 않으려고).
+     * 해제 거래 제외, 정렬은 건물 상세와 같게 계약일 최신순 → 같은 날이면 id 역순 — 건물별 첫 건이 latestDeal 이에요 (#35 에서 추가)
+     */
+    List<Trade> findByBuildingIdInAndCdealTypeIsNullAndDealDateGreaterThanEqualOrderByDealDateDescIdDesc(
+            Collection<Long> buildingIds, LocalDate since);
 
     /** 그 구에서 가장 최근에 거래가 들어온 시각. 수집 이력이 없는 구의 자료 기준일 대체값이에요 (#19 부터) */
     @Query("select max(t.createdAt) from Trade t where t.sggCd = :sggCd")
