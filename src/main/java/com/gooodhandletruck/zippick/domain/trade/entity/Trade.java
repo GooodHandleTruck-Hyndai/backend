@@ -26,6 +26,9 @@ import lombok.NoArgsConstructor;
  * 국토부 응답에는 거래 고유번호가 없고 모든 값이 같은 정상 거래도 있어서,
  * 지문(fingerprint) + 순번(seq) 으로 고유 키를 만들어요. 규칙은 노션 「실거래 적재 규칙」 참고.
  * createdAt(BaseTimeEntity) = 처음 수집된 시각이라, 새 신고 감지(17번)에 그대로 써요. (#4 에서 추가)
+ *
+ * #8 변경: 전용면적을 DECIMAL(7,2) → DECIMAL(9,4). 국토부가 113.803, 59.9236 처럼 소수 3~4자리를 보내서
+ * 반올림 없이 원본 그대로 저장하고, 화면 응답에서만 소수 2자리로 보여 줘요.
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -71,8 +74,8 @@ public class Trade extends BaseTimeEntity {
     @Column(name = "deal_amount", nullable = false)
     private Integer dealAmount;
 
-    /** 전용면적 ㎡ (응답 areaM2) */
-    @Column(name = "exclu_use_ar", nullable = false, precision = 7, scale = 2)
+    /** 전용면적 ㎡ (응답 areaM2). 국토부 원본 소수 4자리까지 그대로 (#8) */
+    @Column(name = "exclu_use_ar", nullable = false, precision = 9, scale = 4)
     private BigDecimal excluUseAr;
 
     /** 층. 지하는 음수 */
