@@ -5,6 +5,7 @@ import com.gooodhandletruck.zippick.domain.building.entity.Building;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
 import com.gooodhandletruck.zippick.domain.region.entity.LegalDong;
 import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository;
+import com.gooodhandletruck.zippick.domain.trade.dto.PriceTrendResponse;
 import com.gooodhandletruck.zippick.domain.trade.dto.TransactionListResponse;
 import com.gooodhandletruck.zippick.domain.trade.dto.TransactionResponse;
 import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
@@ -15,6 +16,14 @@ import com.gooodhandletruck.zippick.global.error.ErrorCode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.gooodhandletruck.zippick.global.util.KstClock;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -24,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 건물 조회 로직. (#6 에서 추가: 건물 상세)
  * #16 변경: 실거래 내역(API 8번, 더보기) getTransactions 추가.
+ * #26 변경: 가격 추이(API 13번) getPriceTrend 추가.
  * #19 변경: 자료 기준일(dataBaseDate)을 그 구의 마지막 성공 수집 날짜로 (없으면 예전처럼 마지막 거래 수집 날짜).
  */
 @Service
@@ -36,6 +46,10 @@ public class BuildingService {
 
     /** 실거래 내역 쪽 크기 상한 (명세: 최대 50) */
     static final int MAX_TRANSACTION_PAGE_SIZE = 50;
+
+    /** 가격 추이 개월 수 (명세: 12개를 항상 채워서) */
+    static final int PRICE_TREND_MONTHS = 12;
+    private static final DateTimeFormatter YM = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final BuildingRepository buildingRepository;
     private final TradeRepository tradeRepository;
@@ -102,6 +116,41 @@ public class BuildingService {
                 page,
                 size,
                 slice.hasNext());
+    }
+
+    /** 가격 추이 (API 13번). 이번 달 포함 최근 12개월, 오래된 달부터 (#26) */
+    public PriceTrendResponse getPriceTrend(Long buildingId) {
+        return getPriceTrend(buildingId, KstClock.today());
+    }
+
+    /** 테스트에서 기준일을 고정하려고 나눠 둬요 */
+    PriceTrendResponse getPriceTrend(Long buildingId, LocalDate today) {
+        if (!buildingRepository.existsById(buildingId)) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
+        YearMonth to = YearMonth.from(today);
+        YearMonth from = to.minusMonths(PRICE_TREND_MONTHS - 1);
+
+        Map<String, TradeRepository.MonthlyTotal> byYm = new HashMap<>();
+        for (TradeRepository.MonthlyTotal row : tradeRepository.sumByDealYm(buildingId, from.format(YM), to.format(YM))) {
+            byYm.put(row.getDealYm(), row);
+        }
+
+        // 거래 없는 달도 빠짐없이 12개 — 앱이 x축을 그대로 그리면 돼요(명세: 항상 채워서)
+        List<PriceTrendResponse.MonthlyPrice> months = new ArrayList<>(PRICE_TREND_MONTHS);
+        for (YearMonth ym = from; !ym.isAfter(to); ym = ym.plusMonths(1)) {
+            TradeRepository.MonthlyTotal row = byYm.get(ym.format(YM));
+            String label = ym.toString(); // "2025-12"
+            if (row == null) {
+                months.add(new PriceTrendResponse.MonthlyPrice(label, null, 0));
+            } else {
+                int avg = BigDecimal.valueOf(row.getTotal())
+                        .divide(BigDecimal.valueOf(row.getCnt()), 0, RoundingMode.HALF_UP)
+                        .intValueExact();
+                months.add(new PriceTrendResponse.MonthlyPrice(label, avg, row.getCnt().intValue()));
+            }
+        }
+        return new PriceTrendResponse(months);
     }
 
     /**

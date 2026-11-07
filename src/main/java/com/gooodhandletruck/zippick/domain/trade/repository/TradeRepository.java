@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** 실거래 조회 (#4 에서 추가, #6·#16 에서 건물 상세·실거래 내역 조회, #8 에서 existsBySggCdAndDealYm 추가) */
+/** 실거래 조회 (#4 에서 추가, #6·#16 에서 건물 상세·실거래 내역 조회, #8 에서 existsBySggCdAndDealYm, #26 에서 가격 추이 집계 추가) */
 public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     /** 재수집 때 (구, 계약월) 한 달 치 기존 거래를 불러와서 새로 받은 데이터와 비교해요 */
@@ -34,4 +34,30 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     /** 그 달에 저장된 거래가 있는지 — 국토부가 0건을 보냈을 때 통째 삭제를 막는 데 써요 (#8) */
     boolean existsBySggCdAndDealYm(String sggCd, String dealYm);
+
+    /**
+     * 가격 추이(API 13번): 한 건물의 계약월별 금액 합계·건수, 해제 거래 제외 (#26).
+     * 평균을 DB 에서 내면 소수 처리가 DB 마다 달라서, 합계·건수만 받아 서비스에서 반올림해요.
+     * 거래 없는 달은 결과에 안 나와요 — 서비스가 빈 달을 채워요.
+     *
+     * @param fromYm 시작 계약월 YYYYMM (포함)
+     * @param toYm   끝 계약월 YYYYMM (포함). 문자열 비교지만 YYYYMM 형식이라 달 순서와 같아요
+     */
+    @Query("""
+            select t.dealYm as dealYm, sum(t.dealAmount) as total, count(t) as cnt
+            from Trade t
+            where t.building.id = :buildingId and t.cdealType is null and t.dealYm between :fromYm and :toYm
+            group by t.dealYm
+            """)
+    List<MonthlyTotal> sumByDealYm(@Param("buildingId") Long buildingId, @Param("fromYm") String fromYm,
+            @Param("toYm") String toYm);
+
+    /** sumByDealYm 한 줄 */
+    interface MonthlyTotal {
+        String getDealYm();
+
+        Long getTotal();
+
+        Long getCnt();
+    }
 }
