@@ -14,3 +14,9 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: method
+
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+  base-url: https://dapi.kakao.com
+  connect-timeout: 2s
+  read-timeout: 3s
