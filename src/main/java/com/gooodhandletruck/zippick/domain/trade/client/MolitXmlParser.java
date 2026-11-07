@@ -31,6 +31,11 @@ final class MolitXmlParser {
     }
 
     static Page parse(byte[] xml) {
+        return parse(xml, MolitDataset.APT);
+    }
+
+    /** 종류별로 건물명 태그만 달라요 (아파트 aptNm, 오피스텔 offiNm) (#27) */
+    static Page parse(byte[] xml, MolitDataset dataset) {
         Element root = read(xml).getDocumentElement();
 
         if ("OpenAPI_ServiceResponse".equals(root.getTagName())) {
@@ -55,7 +60,7 @@ final class MolitXmlParser {
         NodeList itemNodes = root.getElementsByTagName("item");
         List<MolitTradeItem> items = new ArrayList<>(itemNodes.getLength());
         for (int i = 0; i < itemNodes.getLength(); i++) {
-            items.add(toItem((Element) itemNodes.item(i)));
+            items.add(toItem((Element) itemNodes.item(i), dataset));
         }
         try {
             return new Page(Integer.parseInt(totalCount), items);
@@ -64,12 +69,12 @@ final class MolitXmlParser {
         }
     }
 
-    private static MolitTradeItem toItem(Element item) {
+    private static MolitTradeItem toItem(Element item, MolitDataset dataset) {
         return new MolitTradeItem(
                 text(item, "sggCd"),
                 text(item, "umdNm"),
                 text(item, "jibun"),
-                text(item, "aptNm"),
+                text(item, dataset.nameTag()), // 오피스텔은 offiNm 을 같은 자리(건물명)에 담아요
                 text(item, "aptDong"),
                 text(item, "buildYear"),
                 text(item, "dealYear"),

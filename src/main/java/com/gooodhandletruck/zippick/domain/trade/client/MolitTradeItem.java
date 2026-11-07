@@ -6,6 +6,7 @@ package com.gooodhandletruck.zippick.domain.trade.client;
  * 값 정리(공백 제거, 쉼표 제거, 날짜 변환)는 적재 서비스(#8)가 해요.
  * 지문(거래 고유 키) 규칙이 한 곳에만 있어야 나중에 규칙이 어긋나지 않아서, 여기서는 일부러 손대지 않아요.
  * 빈 값은 국토부가 공백 한 칸(" ")으로 보내고, 태그가 없으면 null 이에요.
+ * aptNm 은 건물명이에요 — 오피스텔은 offiNm 을 여기에 담고, 오피스텔엔 aptDong·rgstDate·landLeaseholdGbn 이 없어서 null (#27).
  */
 public record MolitTradeItem(
         String sggCd,

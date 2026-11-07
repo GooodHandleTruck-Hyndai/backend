@@ -17,7 +17,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 class MolitClientLiveTest {
 
     private final MolitClient client = new MolitClient(new MolitProperties(
-            System.getenv("MOLIT_SERVICE_KEY"), "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade",
+            System.getenv("MOLIT_SERVICE_KEY"), "https://apis.data.go.kr/1613000",
             1000, 50, Duration.ofSeconds(5), Duration.ofSeconds(30)));
 
     @Test
@@ -36,7 +36,7 @@ class MolitClientLiveTest {
     @Test
     void 작은_페이지로_나눠_받아도_한_번에_받은_것과_같다() {
         MolitClient smallPages = new MolitClient(new MolitProperties(
-                System.getenv("MOLIT_SERVICE_KEY"), "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade",
+                System.getenv("MOLIT_SERVICE_KEY"), "https://apis.data.go.kr/1613000",
                 50, 50, Duration.ofSeconds(5), Duration.ofSeconds(30)));
 
         MolitMonthResult whole = client.fetchMonth("11440", "202608");

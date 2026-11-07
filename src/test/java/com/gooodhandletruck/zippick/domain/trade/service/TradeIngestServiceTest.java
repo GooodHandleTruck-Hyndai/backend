@@ -7,7 +7,9 @@ import static org.mockito.Mockito.when;
 import com.gooodhandletruck.zippick.domain.TestFixtures;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitApiException;
+import com.gooodhandletruck.zippick.domain.building.entity.BuildingType;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitClient;
+import com.gooodhandletruck.zippick.domain.trade.client.MolitDataset;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitFixtures;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitMonthResult;
 import com.gooodhandletruck.zippick.domain.trade.client.MolitTradeItem;
@@ -84,7 +86,7 @@ class TradeIngestServiceTest {
     }
 
     private CollectRun collect(MolitMonthResult result) {
-        when(molitClient.fetchMonth(result.sggCd(), result.dealYm())).thenReturn(result);
+        when(molitClient.fetchMonth(MolitDataset.APT, result.sggCd(), result.dealYm())).thenReturn(result);
         return service.collectMonth(result.sggCd(), result.dealYm());
     }
 
@@ -223,7 +225,66 @@ class TradeIngestServiceTest {
         assertThat(tradeRepository.findBySggCdAndDealYm(SGG, "202607")).hasSize(1);
     }
 
-    // ---- 반영하지 않는 경우: DB 그대로 + 이력 ----
+    // ---- 오피스텔 (#27) ----
+
+    private CollectRun collectOfficetel(MolitMonthResult result) {
+        when(molitClient.fetchMonth(MolitDataset.OFFICETEL, result.sggCd(), result.dealYm())).thenReturn(result);
+        return service.collectMonth(BuildingType.OFFICETEL, result.sggCd(), result.dealYm());
+    }
+
+    @Test
+    void 오피스텔을_적재하면_OFFICETEL_건물과_거래가_생긴다() {
+        CollectRun run = collectOfficetel(MolitFixtures.mapoOfficetel202608());
+
+        assertThat(run.getStatus()).isEqualTo(CollectStatus.SUCCESS);
+        assertThat(run.getBuildingType()).isEqualTo(BuildingType.OFFICETEL);
+        assertCounts(run, 54, 0, 0);
+        assertThat(buildingRepository.findAll()).hasSize(31)
+                .allSatisfy(b -> assertThat(b.getBuildingType()).isEqualTo(BuildingType.OFFICETEL));
+        // 오피스텔 응답엔 동·등기일 칸이 없어요
+        assertThat(trades()).allSatisfy(t -> {
+            assertThat(t.getAptDong()).isNull();
+            assertThat(t.getRgstDate()).isNull();
+        });
+    }
+
+    @Test
+    void 오피스텔을_적재해도_같은_달_아파트_거래는_지워지지_않는다() {
+        // 비교 범위가 유형별이 아니면, 오피스텔 응답에 없는 아파트 121건이 "안 온 거래"로 전부 지워져요
+        firstLoad();
+
+        CollectRun officetel = collectOfficetel(MolitFixtures.mapoOfficetel202608());
+
+        assertCounts(officetel, 54, 0, 0);
+        assertThat(tradeRepository.count()).isEqualTo(121 + 54);
+        assertThat(buildingRepository.count()).isEqualTo(77 + 31);
+    }
+
+    @Test
+    void 아파트를_다시_받아도_오피스텔_거래는_지워지지_않는다() {
+        collectOfficetel(MolitFixtures.mapoOfficetel202608());
+        firstLoad();
+
+        CollectRun again = collect(mapo);
+        CollectRun officetelAgain = collectOfficetel(MolitFixtures.mapoOfficetel202608());
+
+        assertCounts(again, 0, 0, 0);
+        assertCounts(officetelAgain, 0, 0, 0);
+        assertThat(tradeRepository.count()).isEqualTo(121 + 54);
+    }
+
+    @Test
+    void 아파트만_있는_달에_오피스텔_0건이_오면_건너뛰지_않고_성공이다() {
+        // 0건 보호(통째 삭제 방지)도 유형별이에요 — 지울 오피스텔 거래가 없으니 정상 성공
+        firstLoad();
+
+        CollectRun run = collectOfficetel(MolitFixtures.result(SGG, YM, 0, List.of()));
+
+        assertThat(run.getStatus()).isEqualTo(CollectStatus.SUCCESS);
+        assertThat(tradeRepository.count()).isEqualTo(121);
+    }
+
+        // ---- 반영하지 않는 경우: DB 그대로 + 이력 ----
 
     @Test
     void 받은_건수가_totalCount_와_다르면_건너뛰고_아무것도_지우지_않는다() {
@@ -259,7 +320,7 @@ class TradeIngestServiceTest {
     @Test
     void 국토부_호출이_실패하면_결과_코드와_함께_실패로_남긴다() {
         firstLoad();
-        when(molitClient.fetchMonth(SGG, YM)).thenThrow(new MolitApiException("국토부 API 결과 코드 03: NO_DATA", "03"));
+        when(molitClient.fetchMonth(MolitDataset.APT, SGG, YM)).thenThrow(new MolitApiException("국토부 API 결과 코드 03: NO_DATA", "03"));
 
         CollectRun run = service.collectMonth(SGG, YM);
 
@@ -310,7 +371,7 @@ class TradeIngestServiceTest {
 
     @Test
     void 실패_이유가_길어도_이력_저장은_성공한다() {
-        when(molitClient.fetchMonth(SGG, YM)).thenThrow(new MolitApiException("x".repeat(2000), (String) null));
+        when(molitClient.fetchMonth(MolitDataset.APT, SGG, YM)).thenThrow(new MolitApiException("x".repeat(2000), (String) null));
 
         CollectRun run = service.collectMonth(SGG, YM);
 

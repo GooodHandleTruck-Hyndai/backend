@@ -30,7 +30,7 @@ import org.springframework.web.client.RestClient;
  */
 class MolitClientTest {
 
-    private static final String BASE = "https://molit.test/RTMSDataSvcAptTrade";
+    private static final String BASE = "https://molit.test"; // #27: 공통 주소, 경로는 MolitDataset
     private static final String KEY = "test-key";
 
     private MockRestServiceServer server;
@@ -52,9 +52,25 @@ class MolitClientTest {
     // ---- 정상 ----
 
     @Test
+    void 오피스텔은_오피스텔_API_경로로_부르고_건물명은_offiNm_에서_읽는다() {
+        MolitClient client = client(KEY, 1000, 50);
+        server.expect(once(), requestTo(containsString(BASE + "/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade?")))
+                .andRespond(withSuccess(MolitXmlParserTest.fixture("offi-trade-11440-202608.xml"),
+                        MediaType.APPLICATION_XML));
+
+        MolitMonthResult result = client.fetchMonth(MolitDataset.OFFICETEL, "11440", "202608");
+
+        server.verify();
+        assertThat(result.items()).hasSize(54);
+        assertThat(result.isComplete()).isTrue();
+        assertThat(result.items().get(0).aptNm()).isEqualTo("마포 한화 오벨리스크");
+        assertThat(result.items().get(0).aptDong()).isNull(); // 오피스텔엔 동 태그가 없어요
+    }
+
+    @Test
     void 한_달_치를_한_번에_받는다() {
         MolitClient client = client(KEY, 1000, 50);
-        server.expect(once(), requestTo(containsString(BASE + "/getRTMSDataSvcAptTrade?")))
+        server.expect(once(), requestTo(containsString(BASE + "/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?")))
                 .andExpect(queryParam("serviceKey", KEY))
                 .andExpect(queryParam("LAWD_CD", "11440"))
                 .andExpect(queryParam("DEAL_YMD", "202608"))

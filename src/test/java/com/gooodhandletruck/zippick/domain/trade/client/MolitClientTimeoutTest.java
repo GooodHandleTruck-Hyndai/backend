@@ -81,7 +81,7 @@ class MolitClientTimeoutTest {
     }
 
     private String localBaseUrl() {
-        return "http://127.0.0.1:" + server.getAddress().getPort() + "/RTMSDataSvcAptTrade";
+        return "http://127.0.0.1:" + server.getAddress().getPort(); // #27: baseUrl 은 공통 주소, 경로는 MolitDataset 이 붙여요
     }
 
     @Test
@@ -131,7 +131,7 @@ class MolitClientTimeoutTest {
     void 연결이_안_되는_주소면_연결_제한_시간_안에_실패한다() {
         // 10.255.255.1 은 응답이 없는 주소라 연결을 기다리게 돼요. 네트워크에 따라 바로 거절될 수도 있는데,
         // 그 경우에도 "제한 시간 안에 MolitApiException 으로 끝남" 은 같아야 해요
-        MolitClient client = client("http://10.255.255.1:81/RTMSDataSvcAptTrade", 1000, SHORT, SHORT);
+        MolitClient client = client("http://10.255.255.1:81", 1000, SHORT, SHORT);
 
         long start = System.nanoTime();
         assertThatThrownBy(() -> client.fetchMonth("11440", "202608"))

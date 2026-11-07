@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClientException;
 
 /**
  * 국토부 「아파트 매매 실거래가 자료」(RTMSDataSvcAptTrade) 호출. API 목록 3번의 호출 부분. (#7 에서 추가)
+ * #27 변경: 오피스텔 매매(RTMSDataSvcOffiTrade)도 같은 방식으로 — 종류는 MolitDataset 으로 골라요.
  *
  * (구 코드, 계약월) 한 달 치를 모든 페이지에서 받아 모아요. 실패하면 MolitApiException 을 던지고,
  * 다시 시도는 하지 않아요 — 배치(5·12번)가 다음 회차에 다시 받는 게 규칙이라 여기서 반복 호출하면 중복 부담만 생겨요.
@@ -21,7 +22,6 @@ import org.springframework.web.client.RestClientException;
 @EnableConfigurationProperties(MolitProperties.class)
 public class MolitClient {
 
-    private static final String PATH = "/getRTMSDataSvcAptTrade";
     private static final Pattern SGG_CD = Pattern.compile("\\d{5}");
     private static final Pattern DEAL_YM = Pattern.compile("\\d{4}(0[1-9]|1[0-2])");
 
@@ -46,12 +46,17 @@ public class MolitClient {
      * @param dealYm 계약월 YYYYMM (예: 202608)
      */
     public MolitMonthResult fetchMonth(String sggCd, String dealYm) {
+        return fetchMonth(MolitDataset.APT, sggCd, dealYm);
+    }
+
+    /** 종류(아파트·오피스텔)를 골라 한 달 치 거래 (#27) */
+    public MolitMonthResult fetchMonth(MolitDataset dataset, String sggCd, String dealYm) {
         validate(sggCd, dealYm);
 
         List<MolitTradeItem> items = new ArrayList<>();
         int totalCount = 0;
         for (int pageNo = 1; pageNo <= properties.maxPages(); pageNo++) {
-            MolitXmlParser.Page page = MolitXmlParser.parse(fetchPage(sggCd, dealYm, pageNo));
+            MolitXmlParser.Page page = MolitXmlParser.parse(fetchPage(dataset, sggCd, dealYm, pageNo), dataset);
             totalCount = page.totalCount();
             items.addAll(page.items());
             // 다 받았거나, 더 줄 게 없다고 빈 페이지가 오면 멈춰요 (빈 페이지 확인이 없으면 건수가 안 맞을 때 끝까지 돌아요)
@@ -63,14 +68,14 @@ public class MolitClient {
                 + ", dealYm=" + dealYm + ", totalCount=" + totalCount + ")", (String) null);
     }
 
-    private byte[] fetchPage(String sggCd, String dealYm, int pageNo) {
+    private byte[] fetchPage(MolitDataset dataset, String sggCd, String dealYm, int pageNo) {
         if (properties.serviceKey() == null || properties.serviceKey().isBlank()) {
             throw new MolitApiException("국토부 서비스 키가 없어요 (환경 변수 MOLIT_SERVICE_KEY)", (String) null);
         }
         try {
             // 키를 템플릿 변수로 넘겨야 + / = 같은 문자가 %2B %2F %3D 로 정확히 인코딩돼요 (안 하면 인증 실패)
             return restClient.get()
-                    .uri(PATH + "?serviceKey={key}&LAWD_CD={sggCd}&DEAL_YMD={dealYm}&numOfRows={rows}&pageNo={page}",
+                    .uri(dataset.path() + "?serviceKey={key}&LAWD_CD={sggCd}&DEAL_YMD={dealYm}&numOfRows={rows}&pageNo={page}",
                             Map.of("key", properties.serviceKey(), "sggCd", sggCd, "dealYm", dealYm,
                                     "rows", properties.pageSize(), "page", pageNo))
                     .retrieve()

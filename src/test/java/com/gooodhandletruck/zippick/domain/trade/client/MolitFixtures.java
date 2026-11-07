@@ -24,6 +24,13 @@ public final class MolitFixtures {
         return new MolitMonthResult("11440", "202608", page.totalCount(), page.items());
     }
 
+    /** 실제 마포구(11440) 2026년 8월 오피스텔 응답 54건 (#27) */
+    public static MolitMonthResult mapoOfficetel202608() {
+        MolitXmlParser.Page page = MolitXmlParser.parse(
+                MolitXmlParserTest.fixture("offi-trade-11440-202608.xml"), MolitDataset.OFFICETEL);
+        return new MolitMonthResult("11440", "202608", page.totalCount(), page.items());
+    }
+
     /**
      * 거래 한 건의 일부 칸만 바꾼 복사본. 예: copy(item, Map.of("cdealType", "O"))
      * 레코드라 setter 가 없어서, 칸 이름으로 바꿔 끼워요 (오타면 바로 실패).
