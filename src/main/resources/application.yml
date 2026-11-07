@@ -3,6 +3,8 @@ spring:
     name: zippick
   profiles:
     active: local
+  jackson:
+    time-zone: Asia/Seoul
 
 server:
   port: 8080

@@ -19,7 +19,11 @@ public enum ErrorCode {
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "C001", "입력값이 올바르지 않아요"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "C002", "요청한 리소스를 찾을 수 없어요"),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "C003", "지원하지 않는 HTTP 메서드예요"),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C999", "서버 내부 오류가 발생했어요");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C999", "서버 내부 오류가 발생했어요"),
+
+    // 기기 (D)
+    MISSING_ANONYMOUS_ID(HttpStatus.UNAUTHORIZED, "D001", "X-Anonymous-Id 헤더가 필요해요"),
+    DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "D002", "등록되지 않은 기기예요");
 
     private final HttpStatus status;
     private final String code;
