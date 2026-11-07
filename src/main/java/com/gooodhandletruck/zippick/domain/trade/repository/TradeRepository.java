@@ -28,7 +28,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
      */
     Slice<Trade> findByBuildingIdAndCdealTypeIsNullOrderByDealDateDescIdDesc(Long buildingId, Pageable pageable);
 
-    /** 그 구에서 가장 최근에 수집된 시각. 수집 이력(5·12번 배치)이 생기기 전까지 자료 기준일로 써요 */
+    /** 그 구에서 가장 최근에 거래가 들어온 시각. 수집 이력이 없는 구의 자료 기준일 대체값이에요 (#19 부터) */
     @Query("select max(t.createdAt) from Trade t where t.sggCd = :sggCd")
     LocalDateTime findLatestCollectedAt(@Param("sggCd") String sggCd);
 

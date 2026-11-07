@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import com.gooodhandletruck.zippick.global.util.KstClock;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,6 +20,9 @@ import lombok.NoArgsConstructor;
  *
  * 5번(시연 지역 사전 저장)·12번(재수집) 배치가 언제 무엇을 얼마나 바꿨는지, 왜 건너뛰었는지 남겨요.
  * ERD 의 alert_held(알림 보류)는 쓰는 곳(17번 알림)이 생길 때 추가해요.
+ *
+ * #19 변경: 시작·종료 시각을 한국 시간(KstClock)으로 기록. 이 날짜가 화면의 자료 기준일이 되는데,
+ * 서버가 UTC 면 04:00(KST) 재수집이 전날 19:00 으로 찍혀 기준일이 하루 늦게 보여서예요.
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -79,7 +83,7 @@ public class CollectRun {
         this.sggCd = sggCd;
         this.dealYm = dealYm;
         this.status = CollectStatus.RUNNING;
-        this.startedAt = LocalDateTime.now();
+        this.startedAt = LocalDateTime.now(KstClock.KST);
     }
 
     public static CollectRun start(String sggCd, String dealYm) {
@@ -114,6 +118,6 @@ public class CollectRun {
     private void finish(CollectStatus status, String reason) {
         this.status = status;
         this.message = reason == null || reason.length() <= MESSAGE_MAX ? reason : reason.substring(0, MESSAGE_MAX);
-        this.finishedAt = LocalDateTime.now();
+        this.finishedAt = LocalDateTime.now(KstClock.KST);
     }
 }
