@@ -14,10 +14,13 @@ import com.gooodhandletruck.zippick.domain.building.entity.CoordSource;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
 import com.gooodhandletruck.zippick.domain.region.entity.LegalDong;
 import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository;
+import com.gooodhandletruck.zippick.domain.trade.entity.CollectRun;
 import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
+import com.gooodhandletruck.zippick.domain.trade.repository.CollectRunRepository;
 import com.gooodhandletruck.zippick.domain.trade.repository.TradeRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,6 +28,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +54,9 @@ class BuildingDetailApiTest {
 
     @Autowired
     private LegalDongRepository legalDongRepository;
+
+    @Autowired
+    private CollectRunRepository collectRunRepository;
 
     private Building building;
     private int fingerprintSeq;
@@ -271,6 +278,49 @@ class BuildingDetailApiTest {
                 .andExpect(jsonPath("$.data.dataBaseDate").value(LocalDate.now().toString()));
     }
 
+    // ---- 자료 기준일 = 마지막 성공 수집 날짜 (#19) ----
+
+    @Test
+    void 수집_이력이_있으면_마지막_성공_수집_날짜가_자료_기준일이다() throws Exception {
+        // 오늘 거래가 들어왔어도(createdAt=오늘), 수집 이력이 있으면 그 날짜를 기준으로 봐요
+        saveTradeFor(building, LocalDate.of(2026, 10, 1));
+        saveRun("11440", "success", LocalDateTime.of(2026, 11, 3, 4, 0));
+        saveRun("11440", "success", LocalDateTime.of(2026, 11, 5, 4, 0));
+
+        mockMvc.perform(get(URL, building.getId()))
+                .andExpect(jsonPath("$.data.dataBaseDate").value("2026-11-05"));
+    }
+
+    @Test
+    void 새_거래가_없어도_다시_받은_날짜로_바뀐다() throws Exception {
+        // 명세 12번: 재수집했는데 바뀐 게 없어도(0/0/0) 다시 받은 날짜가 기준일이 돼요
+        saveRun("11440", "success", LocalDateTime.of(2026, 11, 5, 4, 0));
+        mockMvc.perform(get(URL, building.getId())).andExpect(jsonPath("$.data.dataBaseDate").value("2026-11-05"));
+
+        saveRun("11440", "success", LocalDateTime.of(2026, 11, 6, 4, 0)); // 다음 날 재수집, 추가 0건
+
+        mockMvc.perform(get(URL, building.getId())).andExpect(jsonPath("$.data.dataBaseDate").value("2026-11-06"));
+    }
+
+    @Test
+    void 건너뜀이나_실패한_수집은_기준일에_넣지_않는다() throws Exception {
+        // 반영하지 않은 회차라 DB 데이터는 그 전 성공 때 그대로예요
+        saveRun("11440", "success", LocalDateTime.of(2026, 11, 5, 4, 0));
+        saveRun("11440", "skip", LocalDateTime.of(2026, 11, 6, 4, 0));
+        saveRun("11440", "fail", LocalDateTime.of(2026, 11, 7, 4, 0));
+
+        mockMvc.perform(get(URL, building.getId()))
+                .andExpect(jsonPath("$.data.dataBaseDate").value("2026-11-05"));
+    }
+
+    @Test
+    void 다른_구_수집_이력은_보지_않는다() throws Exception {
+        saveRun("11410", "success", LocalDateTime.of(2026, 11, 5, 4, 0));
+
+        mockMvc.perform(get(URL, building.getId()))
+                .andExpect(jsonPath("$.data.dataBaseDate").value(nullValue()));
+    }
+
     @Test
     void 다른_구_데이터만_있으면_자료_기준일은_null() throws Exception {
         Building otherGu = buildingRepository.save(TestFixtures.building().sggCd("11410").aptNm("다른구단지").build());
@@ -325,6 +375,18 @@ class BuildingDetailApiTest {
                 .excluUseAr(new BigDecimal("59.98"))
                 .build();
         tradeRepository.save(trade);
+    }
+
+    /** 수집 이력 한 줄. 종료 시각은 now() 로 찍혀서 테스트에선 원하는 날짜로 덮어써요 */
+    private void saveRun(String sggCd, String result, LocalDateTime finishedAt) {
+        CollectRun run = CollectRun.start(sggCd, "202610");
+        switch (result) {
+            case "success" -> run.succeed(0, 0, 0);
+            case "skip" -> run.skip("건수 불일치");
+            default -> run.fail(null, "호출 실패");
+        }
+        ReflectionTestUtils.setField(run, "finishedAt", finishedAt);
+        collectRunRepository.save(run);
     }
 
     private String nextFingerprint() {

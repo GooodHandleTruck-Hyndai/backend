@@ -8,9 +8,11 @@ import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository
 import com.gooodhandletruck.zippick.domain.trade.dto.TransactionListResponse;
 import com.gooodhandletruck.zippick.domain.trade.dto.TransactionResponse;
 import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
+import com.gooodhandletruck.zippick.domain.trade.repository.CollectRunRepository;
 import com.gooodhandletruck.zippick.domain.trade.repository.TradeRepository;
 import com.gooodhandletruck.zippick.global.error.BusinessException;
 import com.gooodhandletruck.zippick.global.error.ErrorCode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 건물 조회 로직. (#6 에서 추가: 건물 상세)
  * #16 변경: 실거래 내역(API 8번, 더보기) getTransactions 추가.
+ * #19 변경: 자료 기준일(dataBaseDate)을 그 구의 마지막 성공 수집 날짜로 (없으면 예전처럼 마지막 거래 수집 날짜).
  */
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,7 @@ public class BuildingService {
     private final BuildingRepository buildingRepository;
     private final TradeRepository tradeRepository;
     private final LegalDongRepository legalDongRepository;
+    private final CollectRunRepository collectRunRepository;
 
     /**
      * 건물 상세 (7번).
@@ -55,8 +59,6 @@ public class BuildingService {
                 .map(TransactionResponse::from)
                 .toList();
 
-        LocalDateTime latestCollectedAt = tradeRepository.findLatestCollectedAt(building.getSggCd());
-
         return new BuildingDetailResponse(
                 building.getId(),
                 building.getAptNm(),
@@ -68,7 +70,7 @@ public class BuildingService {
                 building.getLongitude(),
                 null, // 건물 사진 출처 미정 — 명세대로 null
                 false, // TODO 저장 기능(B, 9~11번) 머지 후 anonymousId 로 저장 여부 연결
-                latestCollectedAt == null ? null : latestCollectedAt.toLocalDate(),
+                dataBaseDate(building.getSggCd()),
                 recent,
                 hasMore);
     }
@@ -100,6 +102,20 @@ public class BuildingService {
                 page,
                 size,
                 slice.hasNext());
+    }
+
+    /**
+     * 자료 기준일 = 그 구 데이터를 마지막으로 받은 날짜 (#19, 명세 12번 "다시 받은 날짜가 dataBaseDate 로 바뀌어요").
+     * 수집 이력이 없으면(배치 도입 전에 넣은 데이터 등) 그 구에서 마지막으로 거래가 들어온 날짜로 대신해요.
+     * 둘 다 없으면 null — 그 구 데이터를 아직 한 번도 안 받은 거예요.
+     */
+    LocalDate dataBaseDate(String sggCd) {
+        LocalDateTime lastSuccess = collectRunRepository.findLastSuccessAt(sggCd);
+        if (lastSuccess != null) {
+            return lastSuccess.toLocalDate();
+        }
+        LocalDateTime latestTrade = tradeRepository.findLatestCollectedAt(sggCd);
+        return latestTrade == null ? null : latestTrade.toLocalDate();
     }
 
     /** 주소 매칭으로 연결된 법정동이 있으면 그걸, 없으면 구 코드로 시도·시군구 이름만 찾아요 */
