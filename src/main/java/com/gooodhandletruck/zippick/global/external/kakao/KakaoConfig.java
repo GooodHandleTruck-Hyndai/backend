@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
@@ -29,5 +30,16 @@ public class KakaoConfig {
             .defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK " + properties.restApiKey())
             .requestFactory(requestFactory)
             .build();
+    }
+
+//    건물 여러 개 좌표를 동시에  찾을 때 쓰는 스레드 풀
+    @Bean
+    public ThreadPoolTaskExecutor kakaoExecutor(){
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(200);
+        executor.setThreadNamePrefix("kakao-");
+        return executor;
     }
 }
