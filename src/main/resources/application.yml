@@ -34,3 +34,8 @@ zippick:
     preload:
       enabled: ${ZIPPICK_PRELOAD_ENABLED:false}
       months: 12
+    # API 12번 재수집: 켜면 매일 04:00(KST)에 최근 3개월을 다시 받아요 (#18 에서 추가)
+    refresh:
+      enabled: ${ZIPPICK_REFRESH_ENABLED:false}
+      months: 3
+      cron: "0 0 4 * * *"
