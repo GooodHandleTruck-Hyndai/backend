@@ -4,14 +4,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.gooodhandletruck.zippick.domain.TestFixtures;
+import com.gooodhandletruck.zippick.domain.building.dto.BuildingAddress;
+import com.gooodhandletruck.zippick.domain.building.dto.BuildingCoordinateResponse;
 import com.gooodhandletruck.zippick.domain.building.entity.Building;
 import com.gooodhandletruck.zippick.domain.building.entity.CoordSource;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
+import com.gooodhandletruck.zippick.domain.building.service.BuildingCoordinateService;
 import com.gooodhandletruck.zippick.domain.region.entity.LegalDong;
 import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository;
 import com.gooodhandletruck.zippick.domain.trade.entity.CollectRun;
@@ -28,6 +35,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 건물 상세 API (7번, GET /api/v1/buildings/{buildingId}) 를 실제 HTTP 요청으로 확인해요. (#6 에서 추가)
  * 응답 필드 이름·값·에러 코드는 팀 API 명세 7번 기준이에요. H2(MySQL 모드), 테스트마다 롤백.
+ * #37 변경: 좌표(#13 카카오 좌표 서비스)를 가짜로 바꿈 — 기본은 "못 찾음", 필요한 테스트만 좌표를 돌려줘요.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -58,12 +67,59 @@ class BuildingDetailApiTest {
     @Autowired
     private CollectRunRepository collectRunRepository;
 
+    @MockitoBean
+    private BuildingCoordinateService buildingCoordinateService;
+
     private Building building;
     private int fingerprintSeq;
 
     @BeforeEach
     void setUp() {
         building = buildingRepository.save(TestFixtures.building().build());
+        // #37: 기본은 카카오에서 못 찾음 → 좌표 null
+        given(buildingCoordinateService.findCoordinate(any(BuildingAddress.class)))
+                .willAnswer(inv -> BuildingCoordinateResponse.notFound(((BuildingAddress) inv.getArgument(0)).buildingId()));
+    }
+
+    // ---- 좌표 (#37) ----
+
+    @Test
+    void 좌표가_없으면_카카오로_찾아서_채운다() throws Exception {
+        given(buildingCoordinateService.findCoordinate(any(BuildingAddress.class)))
+                .willReturn(BuildingCoordinateResponse.found(String.valueOf(building.getId()), 37.54004, 126.94547));
+
+        mockMvc.perform(get(URL, building.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lat").value(37.54004))
+                .andExpect(jsonPath("$.data.lon").value(126.94547));
+    }
+
+    @Test
+    void 카카오에_동_지번으로_물어본다() throws Exception {
+        mockMvc.perform(get(URL, building.getId())).andExpect(status().isOk());
+
+        verify(buildingCoordinateService).findCoordinate(new BuildingAddress(
+                String.valueOf(building.getId()), "11440", null, null, null, "아현동", "777"));
+    }
+
+    @Test
+    void 카카오에서_못_찾으면_좌표만_null_이고_상세는_정상() throws Exception {
+        mockMvc.perform(get(URL, building.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.lat").value(nullValue()))
+                .andExpect(jsonPath("$.data.lon").value(nullValue()));
+    }
+
+    @Test
+    void 출처_없는_저장_좌표는_쓰지_않고_카카오로_찾는다() throws Exception {
+        building.updateLocation(null, null, 37.5786, 126.8879, null); // 예전 샘플처럼 출처 없는 좌표
+        buildingRepository.saveAndFlush(building);
+
+        mockMvc.perform(get(URL, building.getId()))
+                .andExpect(jsonPath("$.data.lat").value(nullValue())); // 카카오(가짜)가 못 찾음 → null
+
+        verify(buildingCoordinateService).findCoordinate(any(BuildingAddress.class));
     }
 
     // ---- 정상 응답 ----
@@ -95,6 +151,8 @@ class BuildingDetailApiTest {
                 .andExpect(jsonPath("$.data.recentTransactions[0].dong").value("705"))
                 .andExpect(jsonPath("$.data.recentTransactions[0].price").value(125000))
                 .andExpect(jsonPath("$.data.hasMoreTransactions").value(false));
+
+        verify(buildingCoordinateService, never()).findCoordinate(any(BuildingAddress.class)); // #37: 행안부 좌표면 카카오 안 불러요
     }
 
     @Test
