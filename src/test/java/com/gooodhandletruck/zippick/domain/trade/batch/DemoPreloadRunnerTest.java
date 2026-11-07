@@ -36,7 +36,8 @@ class DemoPreloadRunnerTest {
     @Test
     void 꺼져_있으면_국토부를_부르지_않는다() {
         TradeCollectBatch batch = mock(TradeCollectBatch.class);
-        CollectProperties properties = new CollectProperties(List.of("11440"), new CollectProperties.Preload(false, 12));
+        CollectProperties properties = new CollectProperties(List.of("11440"), new CollectProperties.Preload(false, 12),
+                new CollectProperties.Refresh(false, 3));
 
         new DemoPreloadRunner(properties, batch).preload();
 
@@ -46,7 +47,8 @@ class DemoPreloadRunnerTest {
     @Test
     void 켜져_있으면_설정한_구의_최근_12개월을_오늘_KST_기준으로_넣는다() {
         TradeCollectBatch batch = mock(TradeCollectBatch.class);
-        CollectProperties properties = new CollectProperties(List.of("11440"), new CollectProperties.Preload(true, 12));
+        CollectProperties properties = new CollectProperties(List.of("11440"), new CollectProperties.Preload(true, 12),
+                new CollectProperties.Refresh(false, 3));
         LocalDate before = KstClock.today();
 
         new DemoPreloadRunner(properties, batch).preload();
