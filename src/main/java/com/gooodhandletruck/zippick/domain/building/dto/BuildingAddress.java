@@ -7,9 +7,9 @@ import jakarta.validation.constraints.Pattern;
 /** 좌표를 찾을 건물. 실거래가 API 응답 필드를 그대로 넣으면 됨 */
 @Schema(description = "좌표를 찾을 건물 (실거래가 API 필드)")
 public record BuildingAddress(
-    @Schema(description = "단지 일련번호 (buildingId)", example = "11680-3482")
+    @Schema(description = "건물 ID (구·동·지번·단지명 조합). 응답에 그대로 돌려줌", example = "11680-역삼동-736-1-래미안")
     @NotBlank
-    String aptSeq,
+    String buildingId,
 
     @Schema(description = "시군구 코드 5자리", example = "11680")
     @NotBlank

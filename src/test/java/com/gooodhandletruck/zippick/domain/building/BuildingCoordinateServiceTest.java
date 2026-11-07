@@ -90,7 +90,7 @@ class BuildingCoordinateServiceTest {
             new BuildingAddress("A-1", "11680", null, null, null, "역삼동", "1"),
             new BuildingAddress("A-2", "11680", null, null, null, "역삼동", "2")));
 
-        assertThat(responses).extracting(BuildingCoordinateResponse::aptSeq).containsExactly("A-1", "A-2");
+        assertThat(responses).extracting(BuildingCoordinateResponse::buildingId).containsExactly("A-1", "A-2");
     }
 
     private BuildingAddress building(String roadNm, String bonbun, String bubun) {

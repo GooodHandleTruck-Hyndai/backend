@@ -49,10 +49,10 @@ public class BuildingCoordinateService {
         try {
             return searchByRoad(building)
                 .or(() -> searchByJibun(building))
-                .map(document -> toResponse(building.aptSeq(), document))
-                .orElseGet(() -> BuildingCoordinateResponse.notFound(building.aptSeq()));
+                .map(document -> toResponse(building.buildingId(), document))
+                .orElseGet(() -> BuildingCoordinateResponse.notFound(building.buildingId()));
         } catch (BusinessException e) {
-            return BuildingCoordinateResponse.notFound(building.aptSeq());
+            return BuildingCoordinateResponse.notFound(building.buildingId());
         }
     }
 
@@ -79,12 +79,12 @@ public class BuildingCoordinateService {
             .findFirst();
     }
 
-    private BuildingCoordinateResponse toResponse(String aptSeq, KakaoAddressResponse.Document document) {
+    private BuildingCoordinateResponse toResponse(String buildingId, KakaoAddressResponse.Document document) {
         try {
-            return BuildingCoordinateResponse.found(aptSeq,
+            return BuildingCoordinateResponse.found(buildingId,
                 Double.parseDouble(document.y()), Double.parseDouble(document.x()));
         } catch (NumberFormatException | NullPointerException e) {
-            return BuildingCoordinateResponse.notFound(aptSeq);
+            return BuildingCoordinateResponse.notFound(buildingId);
         }
     }
 
