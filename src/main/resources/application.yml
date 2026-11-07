@@ -26,3 +26,11 @@ zippick:
   molit:
     # 국토교통부 아파트 매매 실거래가 자료 (공공데이터포털 「일반 인증키(Decoding)」)
     service-key: ${MOLIT_SERVICE_KEY:}
+  # 실거래 수집 배치 (#17 에서 추가). 기본은 꺼짐이라 테스트·CI 에서는 국토부를 부르지 않아요.
+  collect:
+    # 수집할 구 코드 5자리 (마포구 11440)
+    sgg-cds: 11440
+    # API 5번 시연 지역 사전 저장: 켜면 서버 시작 직후 최근 12개월을 넣어요
+    preload:
+      enabled: ${ZIPPICK_PRELOAD_ENABLED:false}
+      months: 12
