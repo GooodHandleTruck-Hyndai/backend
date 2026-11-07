@@ -1,7 +1,10 @@
 package com.gooodhandletruck.zippick.domain.building.service;
 
+import com.gooodhandletruck.zippick.domain.building.dto.BuildingAddress;
+import com.gooodhandletruck.zippick.domain.building.dto.BuildingCoordinateResponse;
 import com.gooodhandletruck.zippick.domain.building.dto.BuildingDetailResponse;
 import com.gooodhandletruck.zippick.domain.building.entity.Building;
+import com.gooodhandletruck.zippick.domain.building.entity.CoordSource;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
 import com.gooodhandletruck.zippick.domain.region.entity.LegalDong;
 import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository;
@@ -35,6 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
  * #16 변경: 실거래 내역(API 8번, 더보기) getTransactions 추가.
  * #26 변경: 가격 추이(API 13번) getPriceTrend 추가.
  * #19 변경: 자료 기준일(dataBaseDate)을 그 구의 마지막 성공 수집 날짜로 (없으면 예전처럼 마지막 거래 수집 날짜).
+ * #37 변경: 건물 상세 lat·lon 을 채워요. 행안부 좌표(JUSO)가 DB 에 있으면 그 값, 없으면 #13 좌표 서비스로
+ *   카카오에 건물 하나만 실시간으로 물어봐요(저장 안 함 — 카카오 정책). 못 찾으면 좌표만 null, 상세는 정상.
  */
 @Service
 @RequiredArgsConstructor
@@ -55,6 +60,7 @@ public class BuildingService {
     private final TradeRepository tradeRepository;
     private final LegalDongRepository legalDongRepository;
     private final CollectRunRepository collectRunRepository;
+    private final BuildingCoordinateService buildingCoordinateService; // #37 건물 상세 좌표
 
     /**
      * 건물 상세 (7번).
@@ -73,6 +79,8 @@ public class BuildingService {
                 .map(TransactionResponse::from)
                 .toList();
 
+        double[] coordinate = coordinate(building); // #37: null 이면 좌표 없음
+
         return new BuildingDetailResponse(
                 building.getId(),
                 building.getAptNm(),
@@ -80,8 +88,8 @@ public class BuildingService {
                 JibunAddressFormatter.format(findRegion(building), building.getUmdNm(), building.getJibun()),
                 null, // 도로명주소는 P1 (14번) — 명세대로 지금은 null
                 building.getBuildYear(),
-                building.getLatitude(),
-                building.getLongitude(),
+                coordinate == null ? null : coordinate[0], // #37: 예전엔 DB 값(항상 비어 있었음)을 그대로 썼어요
+                coordinate == null ? null : coordinate[1],
                 null, // 건물 사진 출처 미정 — 명세대로 null
                 false, // TODO 저장 기능(B, 9~11번) 머지 후 anonymousId 로 저장 여부 연결
                 dataBaseDate(building.getSggCd()),
@@ -165,6 +173,28 @@ public class BuildingService {
         }
         LocalDateTime latestTrade = tradeRepository.findLatestCollectedAt(sggCd);
         return latestTrade == null ? null : latestTrade.toLocalDate();
+    }
+
+    /**
+     * 건물 좌표 {위도, 경도} (#37). 주변 건물(#35)과 같은 규칙:
+     * 행안부 좌표(coordSource=JUSO)만 DB 값을 믿고, 그 밖엔 #13 좌표 서비스(카카오 실시간, 동 + 지번 검색).
+     * 출처 없는 저장 좌표(예전 샘플 데이터 등)는 근거가 없어서 쓰지 않아요. 못 찾으면 null —
+     * #13 서비스가 카카오 오류도 "못 찾음"으로 돌려줘서 상세가 실패하지 않아요.
+     * 건물 하나라 카카오 호출은 1~2번(도로명 없음 → 지번 1번)이고, 주변 건물 같은 한도 문제는 없어요.
+     */
+    private double[] coordinate(Building building) {
+        if (building.getCoordSource() == CoordSource.JUSO
+                && building.getLatitude() != null && building.getLongitude() != null) {
+            return new double[] {building.getLatitude(), building.getLongitude()};
+        }
+        // 국토부 일반 실거래 자료엔 도로명이 없어서 지번(동 + 지번)으로만 찾아요
+        BuildingCoordinateResponse found = buildingCoordinateService.findCoordinate(new BuildingAddress(
+                String.valueOf(building.getId()), building.getSggCd(), null, null, null,
+                building.getUmdNm(), building.getJibun()));
+        if (found == null || !found.found() || found.lat() == null || found.lng() == null) {
+            return null;
+        }
+        return new double[] {found.lat(), found.lng()};
     }
 
     /** 주소 매칭으로 연결된 법정동이 있으면 그걸, 없으면 구 코드로 시도·시군구 이름만 찾아요 */

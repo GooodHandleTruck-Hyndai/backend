@@ -8,6 +8,7 @@ import java.util.List;
 /**
  * 건물 상세(7번) 응답 data. 필드 이름은 API 명세와 같아요. (#6 에서 추가)
  * #33 변경: Swagger 에 칸마다 설명·예시가 보이도록 @Schema 추가 (팀원 DeviceResponse 형식). 예시 값은 실제 건물 21 응답.
+ * #37 변경: lat·lon 이 채워져서 설명 수정. 예시는 건물 21 의 실제 카카오 좌표.
  */
 @Schema(description = "건물 상세")
 public record BuildingDetailResponse(
@@ -32,10 +33,10 @@ public record BuildingDetailResponse(
         @Schema(description = "건축년도", example = "2004", nullable = true)
         Integer builtYear,
 
-        @Schema(description = "위도. 좌표 작업 전이라 지금은 null", example = "37.5414", nullable = true)
+        @Schema(description = "건물 위도. 주소로 좌표를 못 찾으면 null", example = "37.54004", nullable = true)
         Double lat,
 
-        @Schema(description = "경도. 좌표 작업 전이라 지금은 null", example = "126.9468", nullable = true)
+        @Schema(description = "건물 경도. 주소로 좌표를 못 찾으면 null", example = "126.94547", nullable = true)
         Double lon,
 
         // #33: 예시가 없으면 Swagger 가 "string" 으로 보여서 형식 예시를 넣음 (실제 값은 아직 null)
