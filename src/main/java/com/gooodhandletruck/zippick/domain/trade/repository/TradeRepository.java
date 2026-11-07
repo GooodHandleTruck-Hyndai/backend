@@ -3,6 +3,8 @@ package com.gooodhandletruck.zippick.domain.trade.repository;
 import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +20,13 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
      * 화면엔 3건만 보여 주지만 4건을 읽어서, 4번째가 있으면 「더보기」를 띄워요 (개수 쿼리를 따로 안 하려고)
      */
     List<Trade> findTop4ByBuildingIdAndCdealTypeIsNullOrderByDealDateDescIdDesc(Long buildingId);
+
+    /**
+     * 실거래 내역(API 8번) 한 쪽. 정렬은 건물 상세와 같게 계약일 최신순 → 같은 날이면 id 역순.
+     * id 까지 정렬에 넣어야 같은 날 거래가 쪽 경계에서 겹치거나 빠지지 않아요.
+     * Slice 는 size+1 건을 읽어 다음 쪽 여부만 알아내서, 전체 개수 쿼리가 따로 안 나가요 (#16 에서 추가)
+     */
+    Slice<Trade> findByBuildingIdAndCdealTypeIsNullOrderByDealDateDescIdDesc(Long buildingId, Pageable pageable);
 
     /** 그 구에서 가장 최근에 수집된 시각. 수집 이력(5·12번 배치)이 생기기 전까지 자료 기준일로 써요 */
     @Query("select max(t.createdAt) from Trade t where t.sggCd = :sggCd")

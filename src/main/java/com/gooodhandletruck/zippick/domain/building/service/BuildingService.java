@@ -5,6 +5,7 @@ import com.gooodhandletruck.zippick.domain.building.entity.Building;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
 import com.gooodhandletruck.zippick.domain.region.entity.LegalDong;
 import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository;
+import com.gooodhandletruck.zippick.domain.trade.dto.TransactionListResponse;
 import com.gooodhandletruck.zippick.domain.trade.dto.TransactionResponse;
 import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
 import com.gooodhandletruck.zippick.domain.trade.repository.TradeRepository;
@@ -13,11 +14,14 @@ import com.gooodhandletruck.zippick.global.error.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 건물 조회 로직. (#6 에서 추가: 건물 상세)
+ * #16 변경: 실거래 내역(API 8번, 더보기) getTransactions 추가.
  */
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,9 @@ public class BuildingService {
 
     /** 건물 상세에 보여 줄 최근 거래 수 (명세: 최대 3건) */
     static final int RECENT_TRANSACTION_LIMIT = 3;
+
+    /** 실거래 내역 쪽 크기 상한 (명세: 최대 50) */
+    static final int MAX_TRANSACTION_PAGE_SIZE = 50;
 
     private final BuildingRepository buildingRepository;
     private final TradeRepository tradeRepository;
@@ -64,6 +71,35 @@ public class BuildingService {
                 latestCollectedAt == null ? null : latestCollectedAt.toLocalDate(),
                 recent,
                 hasMore);
+    }
+
+    /**
+     * 실거래 내역 (API 8번, 더보기). 해제 거래 제외, 최신순, 쪽 단위.
+     *
+     * @param page 0부터
+     * @param size 1~50
+     */
+    public TransactionListResponse getTransactions(Long buildingId, int page, int size) {
+        // 명세: page·size 범위 오류는 C001. 없는 건물(B001)보다 먼저 봐요 — 요청 자체가 잘못된 거라서
+        if (page < 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "page 는 0 이상이어야 해요: " + page);
+        }
+        if (size < 1 || size > MAX_TRANSACTION_PAGE_SIZE) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT,
+                    "size 는 1~" + MAX_TRANSACTION_PAGE_SIZE + " 이어야 해요: " + size);
+        }
+        // 거래 0건인 건물(빈 목록)과 없는 건물(B001)을 구분하려고 건물부터 확인해요
+        if (!buildingRepository.existsById(buildingId)) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
+
+        Slice<Trade> slice = tradeRepository.findByBuildingIdAndCdealTypeIsNullOrderByDealDateDescIdDesc(
+                buildingId, PageRequest.of(page, size));
+        return new TransactionListResponse(
+                slice.getContent().stream().map(TransactionResponse::from).toList(),
+                page,
+                size,
+                slice.hasNext());
     }
 
     /** 주소 매칭으로 연결된 법정동이 있으면 그걸, 없으면 구 코드로 시도·시군구 이름만 찾아요 */
