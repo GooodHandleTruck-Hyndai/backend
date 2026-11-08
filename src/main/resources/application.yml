@@ -39,3 +39,13 @@ zippick:
       enabled: ${ZIPPICK_REFRESH_ENABLED:false}
       months: 3
       cron: "0 0 4 * * *"
+  # 행안부 주소정보 API (#40 에서 추가). 키는 레포에 쓰지 말고 환경 변수로 넣어요.
+  # 검색 API 와 좌표제공 API 는 승인키가 따로 나와요
+  juso:
+    search-key: ${JUSO_SEARCH_KEY:}
+    coord-key: ${JUSO_COORD_KEY:}
+    # 좌표 없는 건물 채우기 배치. 기본은 꺼짐이라 테스트·CI 에서는 행안부를 부르지 않아요
+    fill:
+      enabled: ${ZIPPICK_JUSO_FILL_ENABLED:false}
+      batch-size: 100
+      delay-ms: 600000
