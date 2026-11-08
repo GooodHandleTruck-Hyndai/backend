@@ -41,7 +41,7 @@ public class RegionController {
         @RequestParam
         @DecimalMin(value = "124.0", message = "경도는 124~132 사이여야 해요")
         @DecimalMax(value = "132.0", message = "경도는 124~132 사이여야 해요")
-        double lng) {
-        return ApiResponse.ok(regionService.findByCoordinate(lat, lng));
+        double lon) {
+        return ApiResponse.ok(regionService.findByCoordinate(lat, lon));
     }
 }

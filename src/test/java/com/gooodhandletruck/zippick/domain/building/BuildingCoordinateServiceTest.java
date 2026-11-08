@@ -44,7 +44,7 @@ class BuildingCoordinateServiceTest {
 
         assertThat(response.found()).isTrue();
         assertThat(response.lat()).isEqualTo(37.5009);
-        assertThat(response.lng()).isEqualTo(127.0364);
+        assertThat(response.lon()).isEqualTo(127.0364);
     }
 
     @Test
