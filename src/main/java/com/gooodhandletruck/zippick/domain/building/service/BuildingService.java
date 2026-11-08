@@ -191,10 +191,10 @@ public class BuildingService {
         BuildingCoordinateResponse found = buildingCoordinateService.findCoordinate(new BuildingAddress(
                 String.valueOf(building.getId()), building.getSggCd(), null, null, null,
                 building.getUmdNm(), building.getJibun()));
-        if (found == null || !found.found() || found.lat() == null || found.lng() == null) {
+        if (found == null || !found.found() || found.lat() == null || found.lon() == null) {
             return null;
         }
-        return new double[] {found.lat(), found.lng()};
+        return new double[] {found.lat(), found.lon()};
     }
 
     /** 주소 매칭으로 연결된 법정동이 있으면 그걸, 없으면 구 코드로 시도·시군구 이름만 찾아요 */

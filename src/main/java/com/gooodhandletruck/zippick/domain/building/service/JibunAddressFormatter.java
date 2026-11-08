@@ -9,7 +9,7 @@ import java.util.Map;
  * 지번 주소 문자열 만들기 (예: 「서울 마포구 상암동 1601」). (#6 에서 추가)
  * API 명세 예시처럼 시도 이름은 줄여서 써요. 법정동코드표에 그 구가 없으면 「상암동 1601」 처럼 동·지번만 써요.
  */
-final class JibunAddressFormatter {
+public final class JibunAddressFormatter {
 
     /** 법정동코드표의 정식 시도 이름 → 짧은 이름. 목록에 없으면 정식 이름 그대로 */
     private static final Map<String, String> SHORT_SIDO = Map.ofEntries(
@@ -36,7 +36,7 @@ final class JibunAddressFormatter {
     private JibunAddressFormatter() {
     }
 
-    static String format(LegalDong region, String umdNm, String jibun) {
+    public static String format(LegalDong region, String umdNm, String jibun) {
         List<String> parts = new ArrayList<>();
         if (region != null) {
             parts.add(SHORT_SIDO.getOrDefault(region.getSidoNm(), region.getSidoNm()));

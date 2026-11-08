@@ -16,8 +16,8 @@ public class RegionService {
 
     private final KakaoLocalClient kakaoLocalClient;
 
-    public RegionResponse findByCoordinate(double lat, double lng) {
-        return kakaoLocalClient.coordToRegion(lat, lng).stream()
+    public RegionResponse findByCoordinate(double lat, double lon) {
+        return kakaoLocalClient.coordToRegion(lat, lon).stream()
             .filter(document -> LEGAL_DONG.equals(document.regionType()))
             .filter(document -> document.code() != null && document.code().length() >= 5)
             .findFirst()

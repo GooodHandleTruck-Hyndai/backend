@@ -13,10 +13,10 @@ public record BuildingCoordinateResponse(
     Double lat,
 
     @Schema(description = "경도", example = "127.0364", nullable = true)
-    Double lng
+    Double lon
 ) {
-    public static  BuildingCoordinateResponse found(String buildingId, double lat, double lng){
-        return new BuildingCoordinateResponse(buildingId, true, lat, lng);
+    public static  BuildingCoordinateResponse found(String buildingId, double lat, double lon){
+        return new BuildingCoordinateResponse(buildingId, true, lat, lon);
     }
 
     public static  BuildingCoordinateResponse notFound(String buildingId){

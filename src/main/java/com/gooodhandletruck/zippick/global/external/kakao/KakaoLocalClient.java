@@ -34,10 +34,10 @@ public class KakaoLocalClient {
     }
 
     /** 좌표 → 행정구역 목록. 카카오는 x = 경도, y = 위도 순서 */
-    public List<KakaoRegionResponse.Document> coordToRegion(double lat, double lng) {
+    public List<KakaoRegionResponse.Document> coordToRegion(double lat, double lon) {
         KakaoRegionResponse response = get("coord2regioncode", uriBuilder -> uriBuilder
             .path(COORD_TO_REGION_PATH)
-            .queryParam("x", lng)
+            .queryParam("x", lon)
             .queryParam("y", lat)
             .build(), KakaoRegionResponse.class);
 
