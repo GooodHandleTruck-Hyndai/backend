@@ -19,4 +19,8 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
     /** 건물 상세의 saved 계산용 */
     boolean existsByDeviceAnonymousIdAndBuildingId(String anonymousId, Long buildingId);
+
+    /** 알림 만들기용: 기기가 저장한 건물 ID (#18) */
+    @Query("select f.building.id from Favorite f where f.device.id = :deviceId")
+    List<Long> findBuildingIdsByDeviceId(@Param("deviceId") Long deviceId);
 }

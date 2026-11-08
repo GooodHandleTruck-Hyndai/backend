@@ -49,3 +49,9 @@ zippick:
       enabled: ${ZIPPICK_JUSO_FILL_ENABLED:false}
       batch-size: 100
       delay-ms: 600000
+  # 관심 건물 알림 만들기 (#18 에서 추가). 기본은 꺼짐이라 테스트·CI 에서는 안 돌아요
+  alert:
+    generate:
+      enabled: ${ZIPPICK_ALERT_ENABLED:false}
+      # 실거래 재수집(04:00) 다음에 돌아요
+      cron: "0 30 4 * * *"

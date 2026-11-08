@@ -37,7 +37,10 @@ public enum ErrorCode {
 
     // 저장 (F)
     FAVORITE_ALREADY_EXISTS(HttpStatus.CONFLICT, "F001", "이미 저장한 건물이에요"),
-    FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "F002", "저장하지 않은 건물이에요");
+    FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "F002", "저장하지 않은 건물이에요"),
+
+    // 알림 (N, #18 에서 추가)
+    ALERT_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "알림을 찾을 수 없어요");
 
     private final HttpStatus status;
     private final String code;
