@@ -19,6 +19,10 @@ import com.gooodhandletruck.zippick.domain.building.entity.Building;
 import com.gooodhandletruck.zippick.domain.building.entity.CoordSource;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
 import com.gooodhandletruck.zippick.domain.building.service.BuildingCoordinateService;
+import com.gooodhandletruck.zippick.domain.device.entity.Device;
+import com.gooodhandletruck.zippick.domain.device.repository.DeviceRepository;
+import com.gooodhandletruck.zippick.domain.favorite.entity.Favorite;
+import com.gooodhandletruck.zippick.domain.favorite.repository.FavoriteRepository;
 import com.gooodhandletruck.zippick.domain.region.entity.LegalDong;
 import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository;
 import com.gooodhandletruck.zippick.domain.trade.entity.CollectRun;
@@ -44,6 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 건물 상세 API (7번, GET /api/v1/buildings/{buildingId}) 를 실제 HTTP 요청으로 확인해요. (#6 에서 추가)
  * 응답 필드 이름·값·에러 코드는 팀 API 명세 7번 기준이에요. H2(MySQL 모드), 테스트마다 롤백.
  * #37 변경: 좌표(#13 카카오 좌표 서비스)를 가짜로 바꿈 — 기본은 "못 찾음", 필요한 테스트만 좌표를 돌려줘요.
+ * #42 변경: saved 테스트를 실제 저장 여부 기준으로 바꿈 (저장한 기기 true, 다른 기기·헤더 없음·등록 안 된 ID false).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -66,6 +71,12 @@ class BuildingDetailApiTest {
 
     @Autowired
     private CollectRunRepository collectRunRepository;
+
+    @Autowired
+    private DeviceRepository deviceRepository; // #42
+
+    @Autowired
+    private FavoriteRepository favoriteRepository; // #42
 
     @MockitoBean
     private BuildingCoordinateService buildingCoordinateService;
@@ -296,9 +307,41 @@ class BuildingDetailApiTest {
                 .andExpect(jsonPath("$.data.recentTransactions[0].dong").value(nullValue()));
     }
 
-    @ParameterizedTest(name = "X-Anonymous-Id [{0}] → saved=false")
+    // ---- 저장 여부 (#42) ----
+
+    @Test
+    void 저장한_기기가_보면_saved_는_true() throws Exception {
+        Device me = deviceRepository.save(Device.register("0.1.0"));
+        favoriteRepository.save(Favorite.of(me, building));
+
+        mockMvc.perform(get(URL, building.getId()).header("X-Anonymous-Id", me.getAnonymousId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.saved").value(true));
+    }
+
+    @Test
+    void 다른_기기가_저장한_건물은_saved_false() throws Exception {
+        Device other = deviceRepository.save(Device.register("0.1.0"));
+        Device me = deviceRepository.save(Device.register("0.1.0"));
+        favoriteRepository.save(Favorite.of(other, building));
+
+        mockMvc.perform(get(URL, building.getId()).header("X-Anonymous-Id", me.getAnonymousId()))
+                .andExpect(jsonPath("$.data.saved").value(false));
+    }
+
+    @Test
+    void 헤더가_없으면_saved_false() throws Exception {
+        Device me = deviceRepository.save(Device.register("0.1.0"));
+        favoriteRepository.save(Favorite.of(me, building));
+
+        mockMvc.perform(get(URL, building.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.saved").value(false));
+    }
+
+    @ParameterizedTest(name = "등록 안 된·빈 X-Anonymous-Id [{0}] → 에러 없이 saved=false")
     @CsvSource({"device-123", "''"})
-    void 저장_기능_연결_전에는_헤더가_있어도_saved_는_false(String deviceId) throws Exception {
+    void 등록_안_된_ID_나_빈_헤더도_에러_없이_saved_false(String deviceId) throws Exception {
         mockMvc.perform(get(URL, building.getId()).header("X-Anonymous-Id", deviceId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.saved").value(false));

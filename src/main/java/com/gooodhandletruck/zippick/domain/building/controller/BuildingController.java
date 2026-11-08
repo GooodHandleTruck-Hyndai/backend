@@ -62,7 +62,7 @@ public class BuildingController {
     @GetMapping("/{buildingId}")
     public ApiResponse<BuildingDetailResponse> getBuilding(
             @Parameter(description = BUILDING_ID_DESC, example = "21") @PathVariable Long buildingId, // #33 예시 추가
-            @Parameter(description = "기기 등록 때 받은 익명 ID. 보내면 저장 여부(saved)를 알려 줘요 (저장 기능 연결 전까지 항상 false)")
+            @Parameter(description = "기기 등록 때 받은 익명 ID. 보내면 이 기기가 저장한 건물인지(saved) 알려 줘요")
             // 선택 헤더라 팀 공통 리졸버(없으면 D001)를 쓰지 않고 직접 받아요 — 안 보내도 상세는 보여야 해서
             @RequestHeader(value = ApiHeaders.ANONYMOUS_ID, required = false) String anonymousId) {
         return ApiResponse.ok(buildingService.getDetail(buildingId, anonymousId));
