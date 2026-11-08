@@ -182,8 +182,8 @@ public class NearbyBuildingService {
             }
             List<BuildingAddress> chunk = addresses.subList(from, Math.min(from + COORDINATE_CHUNK, addresses.size()));
             for (BuildingCoordinateResponse found : buildingCoordinateService.findCoordinates(chunk)) {
-                if (found.found() && found.lat() != null && found.lng() != null) {
-                    coords.put(Long.valueOf(found.buildingId()), new double[] {found.lat(), found.lng()});
+                if (found.found() && found.lat() != null && found.lon() != null) {
+                    coords.put(Long.valueOf(found.buildingId()), new double[] {found.lat(), found.lon()});
                 }
             }
         }
