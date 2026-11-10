@@ -33,8 +33,12 @@ public class JusoClient {
     private static final String COORD_PATH = "/addrlink/addrCoordApi.do";
     private static final String OK = "0";
 
-    /** 키·시스템 문제라 다시 해도 안 되는 오류. 나머지(검색어 문제 등)는 "결과 없음"으로 봐요 */
-    private static final Set<String> FATAL_ERRORS = Set.of("E0001", "-999");
+    /**
+     * 지금은 실패지만 나중에 다시 하면 될 수 있는 오류. 예외를 던져서 NONE 으로 저장하지 않게 해요 → 다음 배치에서 다시 시도.
+     * E0001 승인되지 않은 키, -999 시스템 오류, E0007 다량 요청(너무 자주 부름).
+     * 나머지(검색어 문제 등)는 "결과 없음"으로 봐요
+     */
+    private static final Set<String> RETRY_LATER_ERRORS = Set.of("E0001", "-999", "E0007");
 
     private final RestClient restClient;
     private final JusoProperties properties;
@@ -90,7 +94,7 @@ public class JusoClient {
         if (common == null || OK.equals(common.errorCode())) {
             return true;
         }
-        if (FATAL_ERRORS.contains(common.errorCode())) {
+        if (RETRY_LATER_ERRORS.contains(common.errorCode())) {
             log.warn("Juso {} 실패: {} {}", apiName, common.errorCode(), common.errorMessage());
             throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
         }
