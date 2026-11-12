@@ -29,6 +29,22 @@
 ./gradlew build          # 컴파일 + 테스트
 ```
 
+### Docker 로 한 번에 띄우기 (심사·시연용, #55)
+JDK·IntelliJ 없이 **Docker Desktop 만 있으면** MySQL + 서버 + 마포 시연 데이터가 한 번에 떠요. API 키도 필요 없어요.
+
+```bash
+docker compose -f compose.e2e.yaml up --build -d   # 처음엔 서버 이미지 빌드로 3~5분
+./scripts/e2e-smoke.sh                             # 앱이 쓰는 흐름 13가지 점검 (Windows 는 Git Bash)
+docker compose -f compose.e2e.yaml down -v         # 끄기 + 데이터 지우기
+```
+
+- 확인: http://localhost:8080/health , http://localhost:8080/swagger-ui.html
+- **안드로이드 에뮬레이터 앱(디버그 APK)** 은 `http://10.0.2.2:8080` = 이 PC 의 `localhost:8080` 으로 바로 붙어요.
+- 데이터: `e2e/seed/01-zippick.sql` (마포구 건물·실거래, 국토교통부·행정안전부 공공데이터). 다시 뽑기: `./scripts/e2e-dump-seed.sh`
+- 카카오 키(선택): 레포 폴더에 `.env` 파일을 만들고 `KAKAO_REST_API_KEY=...` 를 넣으면 지역 찾기·좌표 없는 건물에 카카오를 써요.
+  없으면 지역은 DB(가장 가까운 건물의 구·동)로 대신 찾고, 행안부 좌표가 없는 일부 건물은 지도에 안 나와요.
+- 개발용 `compose.yaml` 과 프로젝트 이름·볼륨이 달라서 서로 영향이 없어요. 8080 포트를 쓰는 다른 서버는 먼저 꺼 주세요.
+
 ### 로컬 DB 접속 정보
 | 항목 | 값 |
 |---|---|

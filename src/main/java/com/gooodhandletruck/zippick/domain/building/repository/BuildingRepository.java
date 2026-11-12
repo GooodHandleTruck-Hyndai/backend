@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 /**
  * 건물 조회 (#4 에서 추가)
+ * #55 변경: 행안부 좌표가 있는 건물 전부 조회 추가 (카카오 키 없을 때 지역 찾기용)
  * #50 변경: 앞쪽 건물 찾기(API 20번)용 "좌표 사각형 안 + 좌표 출처" 조회 추가 (idx_buildings_lat_lng 인덱스 사용).
  * #50 후속: 행안부 좌표가 없는 건물(카카오로 찾을 대상) 조회 추가.
  */
@@ -37,4 +38,7 @@ public interface BuildingRepository extends JpaRepository<Building, Long> {
     @Query("select b from Building b where b.coordSource is null or b.coordSource <> :juso "
             + "or b.latitude is null or b.longitude is null")
     List<Building> findWithoutJusoCoordinate(@Param("juso") CoordSource juso);
+
+    /** #55: 행안부 좌표가 저장된 건물 전부. 카카오 키 없을 때 지역 찾기(RegionFallbackService)용 */
+    List<Building> findByCoordSourceAndLatitudeIsNotNullAndLongitudeIsNotNull(CoordSource coordSource);
 }

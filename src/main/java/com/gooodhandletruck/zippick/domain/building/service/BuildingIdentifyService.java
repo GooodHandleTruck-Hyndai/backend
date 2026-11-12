@@ -17,6 +17,7 @@ import com.gooodhandletruck.zippick.domain.trade.repository.TradeRepository;
 import com.gooodhandletruck.zippick.global.auth.CurrentDevice;
 import com.gooodhandletruck.zippick.global.error.BusinessException;
 import com.gooodhandletruck.zippick.global.error.ErrorCode;
+import com.gooodhandletruck.zippick.global.external.kakao.KakaoAvailability;
 import com.gooodhandletruck.zippick.global.util.KstClock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -89,6 +90,7 @@ public class BuildingIdentifyService {
     private final FavoriteRepository favoriteRepository; // saved 계산 (팀원 저장 기능의 조회만 사용, #42 와 같은 방식)
     private final BuildingService buildingService; // 자료 기준일 규칙(#19)을 그대로 쓰려고
     private final BuildingCoordinateService buildingCoordinateService; // #50 후속: 행안부 좌표 없는 건물만 카카오로 (#13 서비스)
+    private final KakaoAvailability kakaoAvailability; // #55: 키 없으면 카카오 조회 생략
 
     public BuildingIdentifyResponse identify(CurrentDevice device, double lat, double lon, double heading) {
         return identify(device, lat, lon, heading, KstClock.today());
@@ -171,6 +173,9 @@ public class BuildingIdentifyService {
      * (주행 중 안내라 카카오가 막혀도 행안부 좌표 건물로는 응답해야 해서 E001 을 던지지 않아요).
      */
     private List<Located> locateByKakao(double lat, double lon, double heading) {
+        if (!kakaoAvailability.enabled()) {
+            return List.of(); // #55: 카카오 키 없으면(로컬 e2e) 행안부 좌표 건물만으로 응답
+        }
         Map<Long, Building> byId = new HashMap<>();
         List<BuildingAddress> addresses = new ArrayList<>();
         for (Building b : buildingRepository.findWithoutJusoCoordinate(CoordSource.JUSO)) {

@@ -1,0 +1,17 @@
+# 로컬 e2e 설정 (#55 에서 추가). compose.e2e.yaml 에서 SPRING_PROFILES_ACTIVE=e2e 로 활성화
+# - 심사위원 PC 에서 키 없이 실행: 데이터는 e2e/seed SQL 로 미리 적재, 외부 수집 배치는 전부 꺼짐(기본값)
+# - 카카오 키(KAKAO_REST_API_KEY)는 선택. 없으면 지역 찾기는 DB 로 대체, 카카오 호출 없음
+spring:
+  datasource:
+    # compose 안에서는 mysql 서비스 이름으로 접속. 비밀번호는 로컬 개발용과 같은 값(공개돼도 되는 e2e 전용 DB)
+    url: ${E2E_DB_URL:jdbc:mysql://mysql:3306/zippick?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${E2E_DB_USER:zippick}
+    password: ${E2E_DB_PASSWORD:zippick}
+  jpa:
+    hibernate:
+      # 시드 SQL 에 없는 테이블(기기·저장·관심 조건·알림)은 첫 실행 때 생성
+      ddl-auto: update
+    open-in-view: false
+  docker:
+    compose:
+      enabled: false # 컨테이너 안에서 docker compose 재실행 방지

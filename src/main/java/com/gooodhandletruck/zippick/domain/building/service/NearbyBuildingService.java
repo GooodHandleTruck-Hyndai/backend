@@ -15,6 +15,7 @@ import com.gooodhandletruck.zippick.domain.trade.entity.Trade;
 import com.gooodhandletruck.zippick.domain.trade.repository.TradeRepository;
 import com.gooodhandletruck.zippick.global.error.BusinessException;
 import com.gooodhandletruck.zippick.global.error.ErrorCode;
+import com.gooodhandletruck.zippick.global.external.kakao.KakaoAvailability;
 import com.gooodhandletruck.zippick.global.util.KstClock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -83,6 +84,7 @@ public class NearbyBuildingService {
     private final LegalDongRepository legalDongRepository;
     private final BuildingCoordinateService buildingCoordinateService;
     private final BuildingService buildingService;
+    private final KakaoAvailability kakaoAvailability; // #55: 키 없으면 카카오 조회 생략
 
     public NearbyBuildingsResponse findNearby(double lat, double lon, Integer radius) {
         return findNearby(lat, lon, radius, KstClock.today());
@@ -162,6 +164,11 @@ public class NearbyBuildingService {
                 needLookup.add(new BuildingAddress(String.valueOf(b.getId()), b.getSggCd(), null, null, null,
                         b.getUmdNm(), b.getJibun()));
             }
+        }
+        // #55: 카카오 키 없으면(로컬 e2e) 호출 생략 — 매번 401 실패 + 1초 쉬고 재시도라 요청마다 1초 이상 지연.
+        // 행안부 좌표 건물만으로 응답
+        if (!kakaoAvailability.enabled()) {
+            return coords;
         }
         lookup(needLookup, coords);
 
@@ -253,8 +260,8 @@ public class NearbyBuildingService {
                 sgg -> legalDongRepository.findFirstBySggCd(sgg).orElse(null));
     }
 
-    /** 두 위경도 사이 거리(m). 하버사인 공식 — 수 km 안에서는 오차가 거의 없어요 */
-    static double distanceM(double lat1, double lon1, double lat2, double lon2) {
+    /** 두 위경도 사이 거리(m). 하버사인 공식 — 수 km 안에서는 오차가 거의 없어요. #55: 지역 대체 찾기에서도 사용 → public */
+    public static double distanceM(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)

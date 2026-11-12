@@ -5,12 +5,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
 import com.gooodhandletruck.zippick.domain.region.dto.RegionResponse;
+import com.gooodhandletruck.zippick.domain.region.service.RegionFallbackService;
 import com.gooodhandletruck.zippick.domain.region.service.RegionService;
 import com.gooodhandletruck.zippick.global.error.BusinessException;
 import com.gooodhandletruck.zippick.global.error.ErrorCode;
+import com.gooodhandletruck.zippick.global.external.kakao.KakaoAvailability;
 import com.gooodhandletruck.zippick.global.external.kakao.KakaoLocalClient;
 import com.gooodhandletruck.zippick.global.external.kakao.dto.KakaoRegionResponse.Document;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +28,18 @@ class RegionServiceTest {
 
     @Mock
     private KakaoLocalClient kakaoLocalClient;
+
+    // #55: 카카오 키 있는 경우(기존 동작) 확인용 테스트 → 키 있음으로 고정. 키 없음은 NoKakaoKeyTest
+    @Mock
+    private KakaoAvailability kakaoAvailability;
+
+    @Mock
+    private RegionFallbackService regionFallbackService;
+
+    @BeforeEach
+    void kakaoKeyPresent() {
+        given(kakaoAvailability.enabled()).willReturn(true);
+    }
 
     @InjectMocks
     private RegionService regionService;

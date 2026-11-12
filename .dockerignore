@@ -1,0 +1,11 @@
+# #55: 이미지 빌드에 불필요한 파일 (빌드 속도·비밀 정보 유출 방지)
+build
+.gradle
+.idea
+*.iml
+.env
+*.env
+docs
+e2e
+work-log.txt
+.git
