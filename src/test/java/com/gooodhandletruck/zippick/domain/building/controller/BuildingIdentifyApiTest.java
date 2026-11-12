@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,6 +20,7 @@ import com.gooodhandletruck.zippick.domain.building.entity.Building;
 import com.gooodhandletruck.zippick.domain.building.entity.BuildingType;
 import com.gooodhandletruck.zippick.domain.building.entity.CoordSource;
 import com.gooodhandletruck.zippick.domain.building.repository.BuildingRepository;
+import com.gooodhandletruck.zippick.domain.building.dto.BuildingCoordinateResponse;
 import com.gooodhandletruck.zippick.domain.building.service.BuildingCoordinateService;
 import com.gooodhandletruck.zippick.domain.region.repository.LegalDongRepository;
 import com.gooodhandletruck.zippick.domain.trade.repository.TradeRepository;
@@ -215,20 +217,51 @@ class BuildingIdentifyApiTest {
 
     // ---- ③ 좌표 출처 · 외부 API ----
 
-    @Test
-    void 행안부_좌표가_없는_건물은_빼고_카카오는_부르지_않는다() throws Exception {
-        Building juso = at("행안부 좌표", 300, 0);
-        saved(TestFixtures.building().aptNm("좌표 없음").jibun(String.valueOf(1000 + seq++)).build()); // 좌표 없음
-        Building noneSource = saved(TestFixtures.building().aptNm("NONE").jibun(String.valueOf(1000 + seq++)).build());
-        noneSource.updateLocation(null, null, null, null, CoordSource.NONE);
-        Building noSourceCoord = saved(TestFixtures.building().aptNm("출처 없는 좌표").jibun(String.valueOf(1000 + seq++)).build());
-        double[] p = destination(100, 0);
-        noSourceCoord.updateLocation(null, null, p[0], p[1], null); // 예전 샘플 데이터처럼 출처가 비어 있음 → 안 믿어요
-        buildingRepository.flush();
+    // #50 후속: 행안부 좌표가 없는 건물은 카카오로 찾아요 (주변 건물 API 와 같은 규칙). 아래 3개가 그 동작을 확인해요
 
+    @Test
+    void 행안부_좌표_건물만_있으면_카카오는_부르지_않는다() throws Exception {
+        Building juso = at("행안부 좌표", 300, 0);
         assertThat(ids(candidates(0))).containsExactly(juso.getId());
         verify(buildingCoordinateService, never()).findCoordinates(anyList());
         verify(buildingCoordinateService, never()).findCoordinate(any(BuildingAddress.class));
+    }
+
+    @Test
+    void 행안부_좌표가_없는_건물은_카카오_좌표로_찾는다() throws Exception {
+        Building juso = at("행안부 좌표", 300, 0);
+        Building noneSource = saved(TestFixtures.building().aptNm("NONE").jibun(String.valueOf(1000 + seq++)).build());
+        noneSource.updateLocation(null, null, null, null, CoordSource.NONE);
+        Building noSourceCoord = saved(TestFixtures.building().aptNm("출처 없는 좌표").jibun(String.valueOf(1000 + seq++)).build());
+        double[] stale = destination(50, 0);
+        noSourceCoord.updateLocation(null, null, stale[0], stale[1], null); // 출처 없는 좌표는 안 믿고 카카오로 다시 찾아요
+        buildingRepository.flush();
+
+        double[] kakaoNone = destination(100, 0);   // 카카오가 알려준 NONE 건물 위치: 정면 100m
+        double[] kakaoStale = destination(500, 180); // 출처 없는 건물의 실제 위치: 뒤쪽 500m → 빠져야 해요
+        when(buildingCoordinateService.findCoordinates(anyList())).thenReturn(List.of(
+                BuildingCoordinateResponse.found(String.valueOf(noneSource.getId()), kakaoNone[0], kakaoNone[1]),
+                BuildingCoordinateResponse.found(String.valueOf(noSourceCoord.getId()), kakaoStale[0], kakaoStale[1])));
+
+        JsonNode list = candidates(0);
+        assertThat(ids(list)).containsExactly(noneSource.getId(), juso.getId()); // 카카오 100m → 행안부 300m 순
+        assertThat(list.get(0).get("lat").asDouble()).isEqualTo(kakaoNone[0]);  // 응답 좌표도 카카오 좌표
+        assertThat(list.get(0).get("distanceM").asInt()).isEqualTo(100);
+    }
+
+    @Test
+    void 카카오가_못_찾거나_실패해도_행안부_좌표_건물로_응답한다() throws Exception {
+        Building juso = at("행안부 좌표", 300, 0);
+        Building noneSource = saved(TestFixtures.building().aptNm("NONE").jibun(String.valueOf(1000 + seq++)).build());
+        noneSource.updateLocation(null, null, null, null, CoordSource.NONE);
+        buildingRepository.flush();
+
+        when(buildingCoordinateService.findCoordinates(anyList()))
+                .thenReturn(List.of(BuildingCoordinateResponse.notFound(String.valueOf(noneSource.getId()))));
+        assertThat(ids(candidates(0))).containsExactly(juso.getId());
+
+        when(buildingCoordinateService.findCoordinates(anyList())).thenThrow(new RuntimeException("카카오 장애"));
+        assertThat(ids(candidates(0))).containsExactly(juso.getId()); // E001 대신 정상 응답
     }
 
     @Test

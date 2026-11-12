@@ -1,5 +1,7 @@
 package com.gooodhandletruck.zippick.domain.building.service;
 
+import com.gooodhandletruck.zippick.domain.building.dto.BuildingAddress;
+import com.gooodhandletruck.zippick.domain.building.dto.BuildingCoordinateResponse;
 import com.gooodhandletruck.zippick.domain.building.dto.BuildingIdentifyResponse;
 import com.gooodhandletruck.zippick.domain.building.dto.BuildingIdentifyResponse.Candidate;
 import com.gooodhandletruck.zippick.domain.building.dto.BuildingIdentifyResponse.LatestDeal;
@@ -17,6 +19,7 @@ import com.gooodhandletruck.zippick.global.error.BusinessException;
 import com.gooodhandletruck.zippick.global.error.ErrorCode;
 import com.gooodhandletruck.zippick.global.util.KstClock;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,9 +46,13 @@ import org.springframework.transaction.annotation.Transactional;
  *   - 가격 말: "12억 3,000만 원", 면적 말: "84제곱미터"            ← PriceFormat.formatPriceVoice / UnitFormat.formatAreaVoice
  * 노션 명세 제안(좌우 60°, 300m)과는 달라요 → 노션 명세를 프론트 기준으로 고칠 예정.
  *
- * 외부 API(카카오) 는 부르지 않아요. 행안부 좌표(coordSource=JUSO)가 DB 에 있는 건물만 봐요 — 명세 "저장해 둔 데이터만".
- * 그래서 주변 건물(카카오로 보충) 에는 나오지만 여기는 안 나오는 건물이 있을 수 있어요 (11/09 기준 마포 346개 중 NONE 7개).
+ * 좌표: 행안부 좌표(coordSource=JUSO)는 DB 값을 쓰고, 행안부가 못 찾은 건물(NONE·출처 없음)만 카카오로 실시간 조회해요.
+ *   주변 건물 API(NearbyBuildingService.coordinates)와 같은 규칙이라, 앱이 주변 목록에서 고르던 결과와 같아져요.
+ *   (#50 후속 변경: 처음엔 JUSO 만 봤는데, 카카오로 찾은 건물이 앱에는 나오고 서버에는 안 나와 150번 중 8번 첫 후보가 달랐어요)
+ *   카카오 좌표는 정책상 저장하지 않아서 매 요청 불러요. 11/12 재채우기 후 마포에서 카카오로 찾는 건물은 7개뿐이라 비용이 작아요.
+ *   주행 중 응답이라 주변 건물과 달리 "못 찾으면 쉬고 한 번 더"는 안 해요 — 못 찾은 건물은 이번 응답에서만 빠져요.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -80,6 +88,7 @@ public class BuildingIdentifyService {
     private final LegalDongRepository legalDongRepository;
     private final FavoriteRepository favoriteRepository; // saved 계산 (팀원 저장 기능의 조회만 사용, #42 와 같은 방식)
     private final BuildingService buildingService; // 자료 기준일 규칙(#19)을 그대로 쓰려고
+    private final BuildingCoordinateService buildingCoordinateService; // #50 후속: 행안부 좌표 없는 건물만 카카오로 (#13 서비스)
 
     public BuildingIdentifyResponse identify(CurrentDevice device, double lat, double lon, double heading) {
         return identify(device, lat, lon, heading, KstClock.today());
@@ -89,9 +98,15 @@ public class BuildingIdentifyService {
     BuildingIdentifyResponse identify(CurrentDevice device, double lat, double lon, double heading, LocalDate today) {
         double carHeading = validate(lat, lon, heading);
 
-        // 1) DB 에서 반경을 감싸는 사각형 안 건물만 (인덱스) → 2) 원·앞쪽으로 정확히 거르기
-        List<Located> ahead = buildingsInBox(lat, lon).stream()
-                .map(b -> locate(b, lat, lon, carHeading))
+        // 1) 행안부 좌표: DB 에서 반경을 감싸는 사각형 안 건물만 (인덱스)
+        //    + 행안부 좌표 없는 건물: 카카오로 좌표를 찾아서 (#50 후속)  → 2) 원·앞쪽으로 정확히 거르기
+        List<Located> located = new ArrayList<>();
+        for (Building b : buildingsInBox(lat, lon)) {
+            located.add(locate(b, b.getLatitude(), b.getLongitude(), lat, lon, carHeading));
+        }
+        located.addAll(locateByKakao(lat, lon, carHeading));
+
+        List<Located> ahead = located.stream()
                 .filter(l -> l.distance() <= RADIUS_M && isAhead(l.relative()))
                 // 가까운 순, 같은 거리면 id 순 (프론트는 주변 목록 순서 = 거리·id 순에서 가장 가까운 것)
                 .sorted(Comparator.comparingDouble(Located::distance).thenComparing(l -> l.building().getId()))
@@ -111,8 +126,8 @@ public class BuildingIdentifyService {
                             b.getAptNm(),
                             b.getBuildingType().name(),
                             JibunAddressFormatter.format(region(b, regions), b.getUmdNm(), b.getJibun()),
-                            b.getLatitude(),
-                            b.getLongitude(),
+                            l.lat(), // #50 후속: 카카오로 찾은 건물은 DB 에 좌표가 없어서 계산에 쓴 좌표를 그대로
+                            l.lon(),
                             (int) Math.round(l.distance()),
                             null, // 건물 사진 출처 미정 — 주변 건물과 같이 null
                             deals.get(b.getId()),
@@ -150,11 +165,45 @@ public class BuildingIdentifyService {
                 lat - dLat, lat + dLat, lon - dLon, lon + dLon);
     }
 
-    /** 건물 하나의 거리(m, 반올림 전) 와 진행 방향 기준 상대 각도(0 이상 360 미만, 시계 방향) */
-    private static Located locate(Building b, double lat, double lon, double heading) {
-        double distance = NearbyBuildingService.distanceM(lat, lon, b.getLatitude(), b.getLongitude());
-        double bearing = bearingDegrees(lat, lon, b.getLatitude(), b.getLongitude());
-        return new Located(b, distance, relative(bearing, heading));
+    /**
+     * #50 후속: 행안부 좌표가 없는 건물(NONE·출처 없음·좌표 비어 있음)을 카카오로 찾아 위치를 계산해요.
+     * 주변 건물 API 와 같은 주소(구 코드 + 동 + 지번)·같은 30개 덩어리. 실패한 덩어리·못 찾은 건물은 빼고 계속해요
+     * (주행 중 안내라 카카오가 막혀도 행안부 좌표 건물로는 응답해야 해서 E001 을 던지지 않아요).
+     */
+    private List<Located> locateByKakao(double lat, double lon, double heading) {
+        Map<Long, Building> byId = new HashMap<>();
+        List<BuildingAddress> addresses = new ArrayList<>();
+        for (Building b : buildingRepository.findWithoutJusoCoordinate(CoordSource.JUSO)) {
+            byId.put(b.getId(), b);
+            addresses.add(new BuildingAddress(String.valueOf(b.getId()), b.getSggCd(), null, null, null,
+                    b.getUmdNm(), b.getJibun()));
+        }
+        List<Located> result = new ArrayList<>();
+        for (int from = 0; from < addresses.size(); from += NearbyBuildingService.COORDINATE_CHUNK) {
+            List<BuildingAddress> chunk = addresses.subList(from,
+                    Math.min(from + NearbyBuildingService.COORDINATE_CHUNK, addresses.size()));
+            List<BuildingCoordinateResponse> found;
+            try {
+                found = buildingCoordinateService.findCoordinates(chunk);
+            } catch (RuntimeException e) {
+                log.warn("identify 카카오 좌표 조회 실패({}개), 행안부 좌표 건물로만 응답: {}", chunk.size(),
+                        e.getClass().getSimpleName());
+                continue;
+            }
+            for (BuildingCoordinateResponse r : found) {
+                if (r.found() && r.lat() != null && r.lon() != null) {
+                    result.add(locate(byId.get(Long.valueOf(r.buildingId())), r.lat(), r.lon(), lat, lon, heading));
+                }
+            }
+        }
+        return result;
+    }
+
+    /** 건물 하나(좌표 pLat, pLon)의 거리(m, 반올림 전) 와 진행 방향 기준 상대 각도(0 이상 360 미만, 시계 방향) */
+    private static Located locate(Building b, double pLat, double pLon, double lat, double lon, double heading) {
+        double distance = NearbyBuildingService.distanceM(lat, lon, pLat, pLon);
+        double bearing = bearingDegrees(lat, lon, pLat, pLon);
+        return new Located(b, pLat, pLon, distance, relative(bearing, heading));
     }
 
     /** 프론트 Geo.bearingDegrees 와 같은 식: (lat1, lon1) 에서 (lat2, lon2) 를 바라본 방위각, 북 0°·시계 방향, 0 이상 360 미만 */
@@ -266,7 +315,7 @@ public class BuildingIdentifyService {
                 sgg -> legalDongRepository.findFirstBySggCd(sgg).orElse(null));
     }
 
-    /** 계산 중간값: 건물, 거리(m, 반올림 전), 상대 각도 */
-    private record Located(Building building, double distance, double relative) {
+    /** 계산 중간값: 건물, 계산에 쓴 좌표(행안부 DB 값 또는 카카오), 거리(m, 반올림 전), 상대 각도 */
+    private record Located(Building building, double lat, double lon, double distance, double relative) {
     }
 }
