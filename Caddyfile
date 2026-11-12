@@ -1,0 +1,6 @@
+# https 앞단 (#57 에서 추가)
+# SITE_ADDRESS(.env) 예: 3-37-254-181.sslip.io → Caddy 가 Let's Encrypt 인증서를 자동 발급·갱신
+{$SITE_ADDRESS} {
+	encode gzip
+	reverse_proxy app:8080
+}

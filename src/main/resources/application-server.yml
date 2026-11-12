@@ -1,0 +1,16 @@
+# 서버(EC2) 배포 설정 (#57 에서 추가). compose.prod.yaml 에서 SPRING_PROFILES_ACTIVE=server 로 활성화
+# - 비밀 값은 전부 환경 변수(.env): DB_PASSWORD, KAKAO_REST_API_KEY, MOLIT_SERVICE_KEY
+# - 배치 켜기·끄기도 .env: ZIPPICK_REFRESH_ENABLED(매일 04:00 재수집), ZIPPICK_ALERT_ENABLED(04:30 알림 생성)
+# - 파일 이름이 application-prod.yml 이 아닌 이유: .gitignore 가 application-prod.yml 을 제외함
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql:3306/zippick?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USER:zippick}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update # 시드에 없는 테이블(기기·저장·관심 조건·알림)은 첫 실행 때 생성
+    open-in-view: false
+  docker:
+    compose:
+      enabled: false # 컨테이너 안에서 docker compose 재실행 방지
