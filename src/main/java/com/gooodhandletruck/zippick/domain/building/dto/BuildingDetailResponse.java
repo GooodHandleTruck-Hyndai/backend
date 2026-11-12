@@ -9,6 +9,7 @@ import java.util.List;
  * 건물 상세(7번) 응답 data. 필드 이름은 API 명세와 같아요. (#6 에서 추가)
  * #33 변경: Swagger 에 칸마다 설명·예시가 보이도록 @Schema 추가 (팀원 DeviceResponse 형식). 예시 값은 실제 건물 21 응답.
  * #37 변경: lat·lon 이 채워져서 설명 수정. 예시는 건물 21 의 실제 카카오 좌표.
+ * #42 변경: saved 설명 수정 (실제 저장 여부 연결).
  */
 @Schema(description = "건물 상세")
 public record BuildingDetailResponse(
@@ -44,7 +45,7 @@ public record BuildingDetailResponse(
                 example = "https://example.com/buildings/21.jpg", nullable = true)
         String imageUrl,
 
-        @Schema(description = "내가 저장한 건물인지. 저장 기능 연결 전까지 항상 false", example = "false")
+        @Schema(description = "내가 저장한 건물인지. X-Anonymous-Id 헤더를 보낼 때만 계산하고, 헤더가 없으면 false", example = "false")
         boolean saved,
 
         @Schema(description = "자료 기준일. 서버가 국토부 실거래 자료를 마지막으로 받은 날짜", example = "2026-11-07")
