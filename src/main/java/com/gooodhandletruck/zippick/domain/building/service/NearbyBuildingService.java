@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,8 +40,10 @@ import org.springframework.transaction.annotation.Transactional;
  * 후보를 "그 위치의 구"로 좁히지 않는 이유: 구 경계 근처에서 반경(최대 3km)이 옆 구로 넘어가면 그쪽 건물을 놓쳐요.
  * 지금은 시연 지역(마포) 건물만 DB 에 있어서 전체를 봐도 346개.
  * 카카오는 몰아 부르면 초당 한도로 막아서, 30개씩 쉬어 가며 부르고 못 찾은 건물은 한 번 더 찾아요 (임시 조치, 아래 chunkPauseMs).
+ * #45 변경: 좌표 조회에서 예상 못한 예외가 나면 그 덩어리만 못 찾음으로 처리 (상황별 테스트에서 500 발견).
  * 지역을 늘리면 행안부 좌표를 DB 에 채워서 이 서비스 안쪽만 바꾸면 돼요 (API 모양은 그대로).
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -181,7 +184,16 @@ public class NearbyBuildingService {
                 pause(chunkPauseMs);
             }
             List<BuildingAddress> chunk = addresses.subList(from, Math.min(from + COORDINATE_CHUNK, addresses.size()));
-            for (BuildingCoordinateResponse found : buildingCoordinateService.findCoordinates(chunk)) {
+            List<BuildingCoordinateResponse> results;
+            try {
+                results = buildingCoordinateService.findCoordinates(chunk);
+            } catch (RuntimeException e) {
+                // #45: 좌표 서비스의 스레드 풀이 가득 차서 거부되는 등 예상 못한 예외는 그 덩어리만 "못 찾음"으로 처리.
+                // 못 찾은 건물은 재시도에서 한 번 더 찾고, 끝까지 하나도 못 찾으면 E001 이에요 (findNearby)
+                log.warn("좌표 덩어리 조회 실패({}개), 다음 덩어리로 진행: {}", chunk.size(), e.getClass().getSimpleName());
+                continue;
+            }
+            for (BuildingCoordinateResponse found : results) {
                 if (found.found() && found.lat() != null && found.lon() != null) {
                     coords.put(Long.valueOf(found.buildingId()), new double[] {found.lat(), found.lon()});
                 }
