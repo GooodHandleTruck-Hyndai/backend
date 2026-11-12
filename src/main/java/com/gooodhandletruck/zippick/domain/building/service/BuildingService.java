@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -42,7 +43,9 @@ import org.springframework.transaction.annotation.Transactional;
  * #37 변경: 건물 상세 lat·lon 을 채워요. 행안부 좌표(JUSO)가 DB 에 있으면 그 값, 없으면 #13 좌표 서비스로
  *   카카오에 건물 하나만 실시간으로 물어봐요(저장 안 함 — 카카오 정책). 못 찾으면 좌표만 null, 상세는 정상.
  * #42 변경: saved 를 실제 저장 여부로 연결 (저장 기능 #12 머지 후). 헤더가 없거나 등록 안 된 ID 면 false.
+ * #45 변경: 좌표 조회에서 예상 못한 예외가 나도 상세는 200 으로, 좌표만 null (상황별 테스트에서 500 발견).
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -202,9 +205,17 @@ public class BuildingService {
             return new double[] {building.getLatitude(), building.getLongitude()};
         }
         // 국토부 일반 실거래 자료엔 도로명이 없어서 지번(동 + 지번)으로만 찾아요
-        BuildingCoordinateResponse found = buildingCoordinateService.findCoordinate(new BuildingAddress(
-                String.valueOf(building.getId()), building.getSggCd(), null, null, null,
-                building.getUmdNm(), building.getJibun()));
+        BuildingCoordinateResponse found;
+        try {
+            found = buildingCoordinateService.findCoordinate(new BuildingAddress(
+                    String.valueOf(building.getId()), building.getSggCd(), null, null, null,
+                    building.getUmdNm(), building.getJibun()));
+        } catch (RuntimeException e) {
+            // #45: 좌표 서비스는 카카오 응답 오류만 "못 찾음"으로 바꿔 줘서, 그 밖의 예외도 여기서 막아요.
+            // 좌표가 없어도 건물 정보·거래는 보여야 하니 상세 전체를 실패시키지 않아요
+            log.warn("건물 {} 좌표 조회 실패, 좌표 없이 응답: {}", building.getId(), e.getClass().getSimpleName());
+            return null;
+        }
         if (found == null || !found.found() || found.lat() == null || found.lon() == null) {
             return null;
         }
