@@ -1,0 +1,48 @@
+# 로컬 e2e: MySQL + 집픽 서버 + 마포 시연 데이터 한 번에 실행 (#55 에서 추가)
+#
+#   docker compose -f compose.e2e.yaml up --build     # 처음 (서버 이미지 빌드 3~5분)
+#   docker compose -f compose.e2e.yaml down -v        # 끄고 데이터까지 지우기 (다음에 시드부터 다시)
+#
+# 띄운 뒤: http://localhost:8080/health , http://localhost:8080/swagger-ui.html
+# 안드로이드 에뮬레이터 앱(디버그 APK)은 http://10.0.2.2:8080 = 이 PC 의 localhost:8080 으로 바로 연결
+#
+# 개발용 compose.yaml 과 프로젝트 이름·볼륨·포트 분리 (같은 폴더라 이름이 같으면 개발 DB 컨테이너를 덮어씀)
+name: zippick-e2e
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: zippick
+      MYSQL_USER: zippick
+      MYSQL_PASSWORD: zippick          # e2e 전용 DB 라 공개돼도 되는 값 (application-e2e.yml 과 같음)
+      MYSQL_ROOT_PASSWORD: zippick-e2e
+      TZ: Asia/Seoul
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      # 첫 실행(볼륨이 비어 있을 때)만 e2e/seed/*.sql 을 이름 순서대로 적재
+      - ./e2e/seed:/docker-entrypoint-initdb.d:ro
+      - zippick-e2e-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uzippick", "-pzippick"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    # 포트 외부 공개 안 함 — 서버만 내부에서 접속 → PC 의 3306·3307 과 충돌 없음
+
+  app:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy # 시드 SQL 적재 완료 후 서버 시작
+    environment:
+      SPRING_PROFILES_ACTIVE: e2e
+      TZ: Asia/Seoul
+      # 선택: 카카오 REST 키가 있으면 .env 에 KAKAO_REST_API_KEY=... 추가. 없어도 동작
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY:-}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  zippick-e2e-mysql:

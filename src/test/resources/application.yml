@@ -11,3 +11,9 @@ spring:
   docker:
     compose:
       enabled: false
+
+# #55: 카카오 키가 비어 있으면 "키 없음 모드"(카카오 호출 없이 DB 로 대신)
+# 테스트는 카카오를 목(mock)으로 대체해 실제 호출 없음 → 기존 테스트가 카카오 경로를 타도록 가짜 키 설정
+# 키 없음 모드는 NoKakaoKeyTest 에서 kakao.rest-api-key= 로 따로 확인
+kakao:
+  rest-api-key: test-dummy-key
