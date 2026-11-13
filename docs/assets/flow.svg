@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="330" viewBox="0 0 1200 330" role="img" aria-labelledby="t d">
+  <title id="t">집픽 이용 흐름</title>
+  <desc id="d">첫 실행, 주행 중 주변 단지 듣기, 저장, 정차 후 상세 확인, 새 거래 알림의 다섯 단계</desc>
+  <style>
+    .f { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", "Segoe UI", sans-serif; }
+    .n { font-size: 13px; font-weight: 700; fill: #2F7E73; letter-spacing: 1px; }
+    .h { font-size: 17px; font-weight: 700; fill: #0E1726; }
+    .c { font-size: 12.5px; fill: #5B6B82; }
+    .api { font-size: 11.5px; fill: #8A98AD; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  </style>
+  <rect width="1200" height="330" rx="18" fill="#FFFFFF" stroke="#DDE3EC"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8A98AD"/>
+    </marker>
+  </defs>
+  <g class="f">
+    <text x="40" y="50" font-size="22" font-weight="700" fill="#0E1726">이용 흐름</text>
+
+    <!-- 1 -->
+    <rect x="40" y="80" width="200" height="210" rx="14" fill="#F4F7FB" stroke="#C9D3E0"/>
+    <text x="60" y="110" class="n">STEP 1 · 정차</text>
+    <text x="60" y="138" class="h">처음 실행</text>
+    <text x="60" y="164" class="c">위치 권한 허용</text>
+    <text x="60" y="184" class="c">알림 조건 설정</text>
+    <text x="60" y="204" class="c">(지역 · 유형 · 가격 · 면적)</text>
+    <text x="60" y="262" class="api">POST /devices</text>
+    <text x="60" y="278" class="api">PUT /interest-conditions</text>
+
+    <line x1="240" y1="185" x2="268" y2="185" stroke="#8A98AD" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- 2 -->
+    <rect x="272" y="80" width="200" height="210" rx="14" fill="#EEF7F5" stroke="#2F7E73" stroke-width="2"/>
+    <text x="292" y="110" class="n">STEP 2 · 주행</text>
+    <text x="292" y="138" class="h">주변 단지 듣기</text>
+    <text x="292" y="164" class="c">버튼 한 번으로</text>
+    <text x="292" y="184" class="c">차 앞쪽 단지와</text>
+    <text x="292" y="204" class="c">최근 거래가 음성 안내</text>
+    <text x="292" y="278" class="api">GET /buildings/identify</text>
+
+    <line x1="472" y1="185" x2="500" y2="185" stroke="#8A98AD" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- 3 -->
+    <rect x="504" y="80" width="200" height="210" rx="14" fill="#F4F7FB" stroke="#C9D3E0"/>
+    <text x="524" y="110" class="n">STEP 3</text>
+    <text x="524" y="138" class="h">관심 단지 저장</text>
+    <text x="524" y="164" class="c">들은 단지를 저장</text>
+    <text x="524" y="184" class="c">저장한 단지는</text>
+    <text x="524" y="204" class="c">다시 묻지 않음</text>
+    <text x="524" y="278" class="api">POST /favorites</text>
+
+    <line x1="704" y1="185" x2="732" y2="185" stroke="#8A98AD" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- 4 -->
+    <rect x="736" y="80" width="200" height="210" rx="14" fill="#F4F7FB" stroke="#C9D3E0"/>
+    <text x="756" y="110" class="n">STEP 4 · 정차</text>
+    <text x="756" y="138" class="h">단지 비교</text>
+    <text x="756" y="164" class="c">상세 · 실거래 내역</text>
+    <text x="756" y="184" class="c">최근 12개월 가격 추이</text>
+    <text x="756" y="204" class="c">길 안내(플레오스 내비)</text>
+    <text x="756" y="246" class="api">GET /buildings/{id}</text>
+    <text x="756" y="262" class="api">  …/transactions</text>
+    <text x="756" y="278" class="api">  …/price-trend</text>
+
+    <line x1="936" y1="185" x2="964" y2="185" stroke="#8A98AD" stroke-width="2" marker-end="url(#a)"/>
+
+    <!-- 5 -->
+    <rect x="968" y="80" width="192" height="210" rx="14" fill="#F4F7FB" stroke="#C9D3E0"/>
+    <text x="988" y="110" class="n">STEP 5</text>
+    <text x="988" y="138" class="h">새 거래 알림</text>
+    <text x="988" y="164" class="c">관심 조건에 맞거나</text>
+    <text x="988" y="184" class="c">저장한 단지에</text>
+    <text x="988" y="204" class="c">새 실거래 신고 시 알림</text>
+    <text x="988" y="278" class="api">GET /alerts</text>
+  </g>
+</svg>

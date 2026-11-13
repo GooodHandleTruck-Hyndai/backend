@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="t d">
+  <title id="t">집픽 Zippick</title>
+  <desc id="d">주행 중 차 앞쪽 아파트의 최근 실거래가를 음성으로 알려 주는 플레오스 차량 앱 소개 이미지</desc>
+  <style>
+    .f { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", "Segoe UI", sans-serif; }
+  </style>
+  <!-- 배경: 단색 (라이트·다크 모드 모두에서 같은 모습) -->
+  <rect width="1280" height="480" rx="20" fill="#0E1726"/>
+
+  <!-- 왼쪽: 서비스 이름과 한 줄 소개 -->
+  <g class="f">
+    <text x="72" y="118" fill="#7DD3C0" font-size="20" font-weight="600" letter-spacing="3">ZIPPICK</text>
+    <text x="72" y="182" fill="#FFFFFF" font-size="52" font-weight="700">집픽</text>
+    <text x="72" y="244" fill="#E6ECF5" font-size="30" font-weight="600">지나가는 아파트,</text>
+    <text x="72" y="286" fill="#E6ECF5" font-size="30" font-weight="600">얼마인지 알려 드려요</text>
+    <text x="72" y="340" fill="#93A3B8" font-size="18">주행 중에는 소리로, 정차하면 화면으로 보는 실거래가</text>
+    <g fill="#93A3B8" font-size="15">
+      <rect x="72" y="374" width="150" height="34" rx="17" fill="none" stroke="#2C3B52"/>
+      <text x="147" y="396" text-anchor="middle">플레오스 차량 앱</text>
+      <rect x="234" y="374" width="150" height="34" rx="17" fill="none" stroke="#2C3B52"/>
+      <text x="309" y="396" text-anchor="middle">국토부 실거래가</text>
+      <rect x="396" y="374" width="130" height="34" rx="17" fill="none" stroke="#2C3B52"/>
+      <text x="461" y="396" text-anchor="middle">음성 안내</text>
+    </g>
+  </g>
+
+  <!-- 오른쪽: 차 앞쪽 도로와 건물, 가격 말풍선 (개념 그림) -->
+  <g>
+    <!-- 도로 (원근) -->
+    <polygon points="830,470 1170,470 1035,150 965,150" fill="#172235"/>
+    <line x1="1000" y1="160" x2="1000" y2="190" stroke="#3A4A63" stroke-width="4"/>
+    <line x1="1000" y1="220" x2="1000" y2="262" stroke="#3A4A63" stroke-width="5"/>
+    <line x1="1000" y1="300" x2="1000" y2="352" stroke="#3A4A63" stroke-width="6"/>
+    <line x1="1000" y1="395" x2="1000" y2="460" stroke="#3A4A63" stroke-width="7"/>
+
+    <!-- 시야(차 앞쪽 범위) -->
+    <path d="M1000 430 L860 170 A300 300 0 0 1 1140 170 Z" fill="#7DD3C0" fill-opacity="0.07" stroke="#7DD3C0" stroke-opacity="0.35" stroke-dasharray="6 6"/>
+
+    <!-- 건물: 왼쪽 -->
+    <g fill="#24324A" stroke="#33445F">
+      <rect x="760" y="196" width="70" height="150" rx="4"/>
+      <rect x="846" y="236" width="54" height="110" rx="4"/>
+    </g>
+    <!-- 건물: 오른쪽 (안내 대상) -->
+    <g>
+      <rect x="1096" y="176" width="80" height="170" rx="4" fill="#2A3D5A" stroke="#7DD3C0" stroke-width="2"/>
+      <rect x="1190" y="226" width="52" height="120" rx="4" fill="#24324A" stroke="#33445F"/>
+    </g>
+    <!-- 창문 -->
+    <g fill="#3B4F6E">
+      <rect x="774" y="214" width="12" height="10"/><rect x="796" y="214" width="12" height="10"/>
+      <rect x="774" y="240" width="12" height="10"/><rect x="796" y="240" width="12" height="10"/>
+      <rect x="774" y="266" width="12" height="10"/><rect x="796" y="266" width="12" height="10"/>
+      <rect x="1110" y="196" width="14" height="11" fill="#7DD3C0" fill-opacity="0.5"/><rect x="1136" y="196" width="14" height="11" fill="#7DD3C0" fill-opacity="0.5"/>
+      <rect x="1110" y="224" width="14" height="11" fill="#7DD3C0" fill-opacity="0.5"/><rect x="1136" y="224" width="14" height="11" fill="#7DD3C0" fill-opacity="0.5"/>
+      <rect x="1110" y="252" width="14" height="11" fill="#7DD3C0" fill-opacity="0.5"/><rect x="1136" y="252" width="14" height="11" fill="#7DD3C0" fill-opacity="0.5"/>
+    </g>
+
+    <!-- 가격 말풍선 -->
+    <g class="f">
+      <rect x="1086" y="120" width="104" height="40" rx="20" fill="#7DD3C0"/>
+      <polygon points="1128,160 1144,160 1136,170" fill="#7DD3C0"/>
+      <text x="1138" y="147" text-anchor="middle" fill="#0E1726" font-size="19" font-weight="700">12.5억</text>
+    </g>
+
+    <!-- 차 (위에서 본 모습) -->
+    <g transform="translate(1000 420)">
+      <rect x="-22" y="-38" width="44" height="76" rx="14" fill="#E6ECF5"/>
+      <rect x="-16" y="-24" width="32" height="18" rx="5" fill="#0E1726"/>
+      <polygon points="0,-62 -9,-46 9,-46" fill="#7DD3C0"/>
+    </g>
+
+    <!-- 음성 안내 카드 -->
+    <g class="f" transform="translate(-62 0)"><!-- 차 아이콘(x 978~1022)과 안 겹치게 왼쪽으로 -->
+      <!-- 음성 안내 문장 형식은 앞쪽 건물 찾기 API(speechText)와 같음. 단지명·가격은 예시 -->
+      <rect x="590" y="396" width="430" height="60" rx="12" fill="#172235" stroke="#2C3B52"/>
+      <g fill="#7DD3C0">
+        <rect x="610" y="418" width="4" height="16" rx="2"/>
+        <rect x="618" y="412" width="4" height="28" rx="2"/>
+        <rect x="626" y="416" width="4" height="20" rx="2"/>
+        <rect x="634" y="421" width="4" height="10" rx="2"/>
+      </g>
+      <text x="652" y="422" fill="#E6ECF5" font-size="14" font-weight="600">오른쪽 앞, ○○아파트</text>
+      <text x="652" y="443" fill="#93A3B8" font-size="13">전용 84제곱미터, 최근 거래 12억 5,000만 원이에요.</text>
+    </g>
+  </g>
+</svg>
