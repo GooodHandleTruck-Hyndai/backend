@@ -1,0 +1,104 @@
+# 서버(EC2) 자동 배포 (#57 에서 추가)
+#
+# 흐름: main 에서 Backend CI(빌드·테스트) 성공 → 이미지 빌드·ECR 업로드 → SSM 으로 EC2 에 교체 명령 → https /health 확인
+# - AWS 인증: OIDC(역할 zippick-github-deploy, 이 저장소 main 에서만 사용 가능) → GitHub 에 AWS 키 저장 안 함
+# - SSM 으로 명령 전달 → EC2 의 SSH(22) 포트를 GitHub 에 열 필요 없음
+# - 이미지 빌드는 GitHub Actions 에서 → 2GB 서버가 운영 중에 빌드하지 않음
+# - 비밀 값(.env: 카카오·국토부 키, DB 비밀번호)은 저장소에 없고 EC2 의 ~/zippick-backend/.env 에만 있음
+# - 수동 재배포: Actions 탭 → "Deploy to EC2" → Run workflow (main)
+name: Deploy to EC2
+
+on:
+  workflow_run:
+    workflows: ["Backend CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write # OIDC 토큰 (AWS 역할 인증)
+  contents: read
+
+concurrency: # 배포가 겹치지 않게 하나씩
+  group: deploy-ec2
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-northeast-2
+  ROLE_ARN: arn:aws:iam::210379561794:role/zippick-github-deploy
+  ECR_REPO: 210379561794.dkr.ecr.ap-northeast-2.amazonaws.com/zippick-backend
+  INSTANCE_ID: i-0bb4c3db66531870e
+  SITE: 3-37-254-181.sslip.io
+
+jobs:
+  deploy:
+    # CI 가 성공한 main push 만 (수동 실행은 항상)
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - name: AWS 인증 (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: 이미지 빌드·업로드
+        run: |
+          docker build -t "$ECR_REPO:$SHA" .
+          docker push "$ECR_REPO:$SHA"
+
+      - name: EC2 에 배포 명령 (SSM)
+        id: send
+        run: |
+          # EC2 에서 ubuntu 사용자로 실행: 코드(compose·Caddy·시드) 갱신 → 새 이미지 받기 → 교체 → /health 확인
+          SCRIPT=$(cat <<'EOS'
+          set -eu
+          DIR=/home/ubuntu/zippick-backend
+          cd "$DIR"
+          if [ ! -d .git ]; then git init -q && git remote add origin https://github.com/GooodHandleTruck-Hyndai/backend.git; fi
+          git fetch -q --depth 1 origin "$SHA"
+          git reset -q --hard FETCH_HEAD   # .env 는 추적 안 하는 파일이라 그대로 유지
+          test -f .env || { echo ".env missing"; exit 1; }
+          export APP_IMAGE="$ECR_REPO:$SHA"
+          docker compose -f compose.prod.yaml pull app
+          docker compose -f compose.prod.yaml up -d --no-build
+          echo "$(date '+%F %T') $SHA (run $RUN_ID)" >> DEPLOYED_VERSION
+          docker image prune -af --filter "until=72h" >/dev/null || true
+          for i in $(seq 1 40); do
+            if curl -fsS --resolve "$SITE:443:127.0.0.1" "https://$SITE/health"; then echo; echo "deployed ${SHA:0:7}"; exit 0; fi
+            sleep 5
+          done
+          echo "health check failed"; docker compose -f compose.prod.yaml logs --tail 80 app; exit 1
+          EOS
+          )
+          FULL="export SHA='$SHA' ECR_REPO='$ECR_REPO' SITE='$SITE' RUN_ID='${{ github.run_id }}'; $SCRIPT"
+          PARAMS=$(jq -n --arg s "$FULL" '{commands: ["sudo -u ubuntu -H bash -c \($s | @sh)"], executionTimeout: ["900"]}')
+          CMD_ID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript \
+            --comment "deploy ${SHA::7}" --parameters "$PARAMS" --query Command.CommandId --output text)
+          echo "command_id=$CMD_ID" >> "$GITHUB_OUTPUT"
+
+      - name: 결과 확인
+        run: |
+          STATUS=Pending
+          for _ in $(seq 1 90); do
+            STATUS=$(aws ssm get-command-invocation --command-id "${{ steps.send.outputs.command_id }}" \
+              --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$STATUS" in Pending|InProgress|Delayed) sleep 10 ;; *) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "${{ steps.send.outputs.command_id }}" \
+            --instance-id "$INSTANCE_ID" --query '[StandardOutputContent, StandardErrorContent]' --output text | tail -60
+          echo "status: $STATUS"
+          test "$STATUS" = "Success"
+
+      - name: 외부에서 https 확인
+        run: curl -fsS "https://$SITE/health"
