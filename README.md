@@ -330,9 +330,5 @@ src/test/resources/application.yml         테스트용 (H2 메모리 DB)
 compose.yaml                               로컬 MySQL 컨테이너
 compose.e2e.yaml                           Docker 한 번에 실행 (MySQL + 서버 + 시연 데이터)
 compose.prod.yaml                          공개 서버 (MySQL + 서버 + Caddy)
-docs/assets/                               README 그림 (src/ 의 HTML 로 생성, scripts/render-readme-images.sh)
+docs/assets/                               README 그림
 ```
-
-### README 그림 다시 만들기
-- 원본: `docs/assets/src/*.html` (차량 앱 색·Asta Sans 글꼴 사용)
-- 생성: `scripts/render-readme-images.sh <차량 앱 저장소 경로>` → `docs/assets/*.png`
