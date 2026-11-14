@@ -1,0 +1,104 @@
+<!doctype html>
+<!--
+  README 대표 그림 (#59) → docs/assets/hero.png (1280×560, 2배 해상도로 렌더링)
+  - 왼쪽: 앱 심볼(frontend res/drawable/ic_launcher.xml)과 한 줄 소개
+  - 오른쪽: 차 진행 방향 앞쪽 180°·1km 안 건물을 고르는 앞쪽 건물 찾기 API(identify) 개념도
+  - 안내 문장: BuildingIdentifyResponse 의 speechText 예시(마포 도화동 한화오벨리스크 실데이터) 그대로
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<style>
+  body { width: 1280px; height: 560px; }
+  .hero { width: 1280px; height: 560px; background: var(--d-bg); border-radius: 28px; color: #fff;
+          display: flex; align-items: center; padding: 0 64px 0 72px; gap: 48px; overflow: hidden; }
+  .left { flex: 1; }
+  .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; }
+  .brand svg { width: 60px; height: 60px; }
+  .brand b { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; }
+  h1 { font-size: 54px; line-height: 68px; font-weight: 800; letter-spacing: -1px; }
+  h1 em { font-style: normal; color: var(--d-accent); }
+  .desc { margin-top: 24px; font-size: 21px; line-height: 33px; color: var(--d-sub); }
+  .meta { margin-top: 36px; font-size: 16px; color: #7E818B; }
+  .meta span + span::before { content: "·"; margin: 0 10px; color: #55575F; }
+  .right { width: 560px; height: 456px; position: relative; }
+  .map { position: absolute; inset: 0; background: #26272B; border-radius: 24px; overflow: hidden; }
+  .voice { position: absolute; left: 24px; right: 24px; bottom: 24px; background: var(--d-surface);
+           border-radius: 18px; padding: 18px 22px; display: flex; gap: 16px; align-items: center;
+           box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .voice .spk { flex: none; width: 48px; height: 48px; border-radius: 50%; background: var(--d-accent-soft);
+                color: var(--d-accent); display: grid; place-items: center; }
+  .voice .spk svg { width: 26px; height: 26px; }
+  .voice p { font-size: 17px; line-height: 26px; color: #fff; font-weight: 700; }
+  .voice p small { display: block; font-size: 15.5px; font-weight: 400; color: var(--d-sub); }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="left">
+    <div class="brand">
+      <!-- 앱 아이콘: 흰 둥근 네모 + 청록 심볼 (ic_launcher.xml) -->
+      <svg viewBox="0 0 200 200"><path fill="#fff" d="M54,2H146A52,52 0 0 1 198,54V146A52,52 0 0 1 146,198H54A52,52 0 0 1 2,146V54A52,52 0 0 1 54,2Z"/>
+        <g transform="translate(44.64 37.33) scale(0.52222)" fill="#0DC9BF">
+          <path d="M134.571 157.348C136.712 157.348 138.449 159.086 138.449 161.229V236.12C138.449 238.263 136.712 240 134.571 240H94.626C73.2078 240 55.8449 222.627 55.8449 201.196V161.229C55.8449 159.086 57.5812 157.348 59.723 157.348H134.571Z"/>
+          <path d="M206.898 0C208.611 0 210 1.38984 210 3.10428V72.6805C210 74.395 208.611 75.7848 206.898 75.7848H121.514C108.722 75.7848 96.7531 82.0964 89.5226 92.6547L55.1726 142.814C54.0158 144.503 52.1007 145.513 50.054 145.513H3.87812C1.73629 145.513 3.48363e-08 143.776 0 141.633V71.2581C0 69.1151 1.73629 67.3778 3.87812 67.3778H59.9158C78.1429 67.3778 93.9102 55.6739 97.8024 39.2553L111.335 3.02622C112.015 1.20631 113.752 1.6828e-05 115.694 0H206.898Z"/>
+        </g></svg>
+      <b>집픽</b>
+    </div>
+    <h1>지나가는 아파트,<br><em>얼마인지</em> 알려 드려요</h1>
+    <p class="desc">운전 중에는 차 앞쪽 단지의 최근 실거래가를 음성으로,<br>차를 세우면 상세 정보와 가격 추이를 화면으로</p>
+    <p class="meta"><span>플레오스 커넥트 차량 앱</span><span>국토교통부 실거래가 공개 자료</span></p>
+  </div>
+
+  <div class="right">
+    <div class="map">
+      <svg width="560" height="456" viewBox="0 0 560 456">
+        <!-- 길 -->
+        <g stroke="#34353A" stroke-width="22" stroke-linecap="round">
+          <line x1="280" y1="-20" x2="280" y2="480"/>
+          <line x1="-20" y1="150" x2="580" y2="120"/>
+          <line x1="-20" y1="262" x2="580" y2="270"/>
+        </g>
+        <g stroke="#3E3F45" stroke-width="2" stroke-dasharray="10 12">
+          <line x1="280" y1="0" x2="280" y2="456"/>
+        </g>
+        <!-- 앞쪽 범위: 진행 방향 좌우 90° (반원), 반경 1km 를 축소 -->
+        <path d="M280 290 L30 290 A250 250 0 0 1 530 290 Z" fill="#52DBD1" fill-opacity="0.10"
+              stroke="#52DBD1" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="8 8"/>
+        <!-- 범위 밖 건물(차 뒤쪽) -->
+        <g fill="#3A3B40">
+          <rect x="70" y="304" width="52" height="28" rx="8"/>
+          <rect x="420" y="304" width="60" height="28" rx="8"/>
+        </g>
+        <!-- 범위 안 건물 -->
+        <g fill="#4A4B52">
+          <rect x="70" y="196" width="56" height="44" rx="8"/>
+          <rect x="330" y="60" width="50" height="44" rx="8"/>
+          <rect x="430" y="196" width="60" height="48" rx="8"/>
+          <rect x="350" y="200" width="44" height="40" rx="8"/>
+        </g>
+        <!-- 가장 가까운 후보 (왼쪽 앞) -->
+        <rect x="170" y="196" width="60" height="52" rx="9" fill="#52DBD1"/>
+        <!-- 가격 말풍선 -->
+        <g>
+          <rect x="128" y="132" width="144" height="44" rx="22" fill="#fff"/>
+          <path d="M192 176 L200 188 L208 176 Z" fill="#fff"/>
+          <text x="200" y="161" text-anchor="middle" font-family="Asta Sans" font-size="19" font-weight="800" fill="#131417">5억 9,700</text>
+        </g>
+        <!-- 차 + 진행 방향 -->
+        <g transform="translate(280 290)">
+          <circle r="34" fill="#52DBD1" fill-opacity="0.18"/>
+          <circle r="20" fill="#52DBD1"/>
+          <path d="M0 -10 L8 6 L0 2 L-8 6 Z" fill="#131417"/>
+        </g>
+      </svg>
+    </div>
+    <div class="voice">
+      <div class="spk"><svg viewBox="0 0 24 24" class="ico" style="stroke-width:2.2"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></div>
+      <p>왼쪽 앞, 한화오벨리스크.<small>전용 36제곱미터, 최근 거래 5억 9,700만 원이에요. 저장할까요?</small></p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

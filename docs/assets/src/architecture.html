@@ -1,0 +1,102 @@
+<!doctype html>
+<!--
+  README 시스템 구성 그림 (#59) → docs/assets/architecture.png (1200×640, 2배 해상도)
+  - 현재 main 코드 기준: 차량 앱 → 집픽 API 서버 → MySQL, 외부 공공·지도 API, 배치 작업
+  - 배포(서버가 어디서 어떻게 도는지)는 deploy.png 에 따로 그림
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<style>
+  body { width: 1200px; height: 620px; }
+  .card { position: relative; width: 1200px; height: 620px; }
+  .head { position: absolute; left: 40px; top: 34px; display: flex; align-items: baseline; gap: 14px; }
+  .box { position: absolute; background: var(--surface); border-radius: 20px; padding: 22px 24px; }
+  .box h3 { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; display: flex; align-items: center; gap: 10px; }
+  .box .tech { font-size: 14.5px; color: var(--sub); margin-top: 6px; }
+  .box ul { list-style: none; margin-top: 14px; }
+  .box li { font-size: 14.5px; line-height: 25px; color: var(--sub); }
+  .box li b { color: var(--text); font-weight: 700; }
+  .sub { background: var(--bg); border-radius: 14px; padding: 14px 16px; }
+  .sub h4 { font-size: 15.5px; font-weight: 800; margin-bottom: 6px; }
+  .sub p { font-size: 14px; line-height: 22px; color: var(--sub); }
+  .server { border: 2px solid var(--accent); background: #fff; }
+  .server .sub { background: var(--surface); }
+  .batch { background: var(--accent-soft) !important; }
+  .ext h3 { font-size: 17.5px; }
+  .ext p { font-size: 14px; line-height: 22px; color: var(--sub); margin-top: 6px; }
+  .tag { font-size: 12.5px; font-weight: 700; color: var(--accent-ink); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; }
+  svg.lines { position: absolute; inset: 0; pointer-events: none; }
+  .lab { position: absolute; font-size: 13.5px; font-weight: 700; color: var(--accent-ink); text-align: center; line-height: 20px; }
+  .lab small { display: block; font-weight: 400; color: var(--muted); }
+  .grp { position: absolute; font-size: 14px; font-weight: 700; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head"><span class="title">시스템 구성</span><span class="caption">현재 main 코드 기준</span></div>
+
+  <!-- 연결선 -->
+  <svg class="lines" width="1200" height="620">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9AA0AB"/></marker></defs>
+    <g stroke="#9AA0AB" stroke-width="2" fill="none">
+      <line x1="300" y1="305" x2="372" y2="305" marker-end="url(#a)"/>
+      <line x1="590" y1="500" x2="590" y2="536" marker-end="url(#a)"/>
+      <path d="M808 176 H862" marker-end="url(#a)"/>
+      <path d="M808 311 H862" marker-end="url(#a)"/>
+      <path d="M808 446 H862" marker-end="url(#a)"/>
+    </g>
+  </svg>
+  <div class="lab" style="left:298px; top:257px; width:76px;">HTTPS<small>REST</small></div>
+
+  <!-- 차량 앱 -->
+  <div class="box" style="left:40px; top:140px; width:260px; height:330px;">
+    <h3><svg viewBox="0 0 200 200" width="30" height="30"><path fill="#fff" stroke="#E6E8EC" stroke-width="6" d="M54,2H146A52,52 0 0 1 198,54V146A52,52 0 0 1 146,198H54A52,52 0 0 1 2,146V54A52,52 0 0 1 54,2Z"/><g transform="translate(44.64 37.33) scale(0.52222)" fill="#0DC9BF"><path d="M134.571 157.348C136.712 157.348 138.449 159.086 138.449 161.229V236.12C138.449 238.263 136.712 240 134.571 240H94.626C73.2078 240 55.8449 222.627 55.8449 201.196V161.229C55.8449 159.086 57.5812 157.348 59.723 157.348H134.571Z"/><path d="M206.898 0C208.611 0 210 1.38984 210 3.10428V72.6805C210 74.395 208.611 75.7848 206.898 75.7848H121.514C108.722 75.7848 96.7531 82.0964 89.5226 92.6547L55.1726 142.814C54.0158 144.503 52.1007 145.513 50.054 145.513H3.87812C1.73629 145.513 3.48363e-08 143.776 0 141.633V71.2581C0 69.1151 1.73629 67.3778 3.87812 67.3778H59.9158C78.1429 67.3778 93.9102 55.6739 97.8024 39.2553L111.335 3.02622C112.015 1.20631 113.752 1.6828e-05 115.694 0H206.898Z"/></g></svg>차량 앱</h3>
+    <div class="tech">플레오스 커넥트 (Android 14)<br>Kotlin · Jetpack Compose</div>
+    <ul>
+      <li><b>플레오스 SDK</b></li>
+      <li>위치 · 차량 주행 상태</li>
+      <li>음성 안내 (TextToSpeech)</li>
+      <li>길 안내 · 도착 (NaviHelper)</li>
+      <li>근접 알림</li>
+    </ul>
+    <ul><li>앱이 만든 익명 ID 로 사용자 구분<br>(로그인 없음)</li></ul>
+  </div>
+
+  <!-- API 서버 -->
+  <div class="box server" style="left:376px; top:120px; width:432px; height:380px;">
+    <h3>집픽 API 서버</h3>
+    <div class="tech">Spring Boot 4 · Java 17 · Spring Data JPA · Swagger</div>
+    <div style="display:flex; gap:12px; margin-top:16px;">
+      <div class="sub" style="flex:1"><h4>건물 · 실거래</h4><p>주변 건물<br>앞쪽 건물 찾기<br>상세 · 거래 내역<br>가격 추이</p></div>
+      <div class="sub" style="flex:1"><h4>사용자 기능</h4><p>기기 등록<br>저장 · 관심 조건<br>새 거래 알림 · 지역</p></div>
+    </div>
+    <div class="sub batch" style="margin-top:12px;">
+      <h4>배치 작업</h4>
+      <p>재수집 — 매일 04:00, 최근 3개월 (신고 지연 · 해제 반영)<br>새 거래 알림 생성 — 매일 04:30<br>사전 저장 · 건물 좌표 채우기 — 설정으로 켜고 끔</p>
+    </div>
+  </div>
+
+  <!-- DB -->
+  <div class="box" style="left:420px; top:540px; width:344px; height:56px; padding:14px 20px; display:flex; align-items:center; gap:14px;">
+    <h3 style="font-size:17.5px;">MySQL 8.4</h3><span style="font-size:14px; color:var(--sub)">건물 · 실거래 · 기기 · 저장 · 알림</span>
+  </div>
+
+  <!-- 외부 API -->
+  <div class="grp" style="left:868px; top:92px;">공공 데이터 · 지도 API</div>
+  <div class="box ext" style="left:868px; top:120px; width:292px; height:112px;">
+    <h3>국토교통부 실거래가</h3>
+    <p>아파트 · 오피스텔 매매 (공공데이터포털)<br>시군구 · 월 단위로 받아 DB 저장</p>
+  </div>
+  <div class="box ext" style="left:868px; top:255px; width:292px; height:112px;">
+    <h3>행정안전부 주소정보</h3>
+    <p>도로명주소 검색 · 좌표<br>건물 좌표를 찾아 DB 저장</p>
+  </div>
+  <div class="box ext" style="left:868px; top:390px; width:292px; height:112px;">
+    <h3>카카오 로컬</h3>
+    <p>좌표 → 지역, 주소 → 좌표<br>정책에 따라 저장 없이 실시간 조회만</p>
+  </div>
+</div>
+</body>
+</html>

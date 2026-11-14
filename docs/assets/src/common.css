@@ -1,0 +1,36 @@
+/*
+ * README 그림 공통 스타일 (#59)
+ * - 색: 차량 앱 테마(frontend ui/theme/AppColors.kt) 값 그대로
+ * - 글꼴: 차량 앱과 같은 Asta Sans (42dot, SIL OFL 1.1). 렌더링 때 fonts/asta_sans.ttf 로 복사해 씀
+ */
+@font-face { font-family: "Asta Sans"; src: url("fonts/asta_sans.ttf"); font-weight: 300 800; }
+
+:root {
+  /* 라이트 (AppColors light) */
+  --bg: #FFFFFF;
+  --surface: #F7F8FA;
+  --line: #E6E8EC;            /* outline 0x1A131417 을 흰 배경 위에 합친 색 */
+  --text: #131417;
+  --sub: #5E6270;
+  --muted: #8B8F9A;
+  --chip: #EDEEF2;            /* buttonSecondary */
+  --accent: #0DC9BF;
+  --accent-ink: #078F88;      /* 흰 배경 위 글자용으로 accent 를 어둡게 */
+  --accent-soft: #E1F5F3;
+  /* 다크 (AppColors dark) */
+  --d-bg: #1D1E21;
+  --d-surface: #313236;
+  --d-line: #3A3B40;
+  --d-sub: #A9ABB3;
+  --d-accent: #52DBD1;
+  --d-accent-soft: #063E3B;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: transparent; }
+body { font-family: "Asta Sans", sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+
+.card { background: var(--bg); border: 1.5px solid var(--line); border-radius: 24px; }
+.title { font-size: 26px; font-weight: 800; letter-spacing: -0.3px; }
+.caption { font-size: 15px; color: var(--muted); }
+.ico { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
