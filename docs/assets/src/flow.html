@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+  README 이용 흐름 그림 (#59) → docs/assets/flow.png (1200×380, 2배 해상도)
+  - 아이콘: 차량 앱 res/drawable 의 24×24 선 아이콘 경로 그대로 (설정·스피커·하트·길 안내·가격표)
+  - 주행/정차 표시: 화면 설계서의 주행 중 화면(S-08·S-09)과 정차 화면 구분
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<style>
+  body { width: 1200px; height: 380px; }
+  .card { width: 1200px; height: 380px; padding: 36px 40px; }
+  .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 26px; }
+  .row { display: flex; align-items: stretch; }
+  .step { flex: 1; background: var(--surface); border-radius: 20px; padding: 22px 20px 20px; }
+  .step.on { background: var(--accent-soft); }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .icon { width: 48px; height: 48px; border-radius: 14px; background: var(--bg); color: var(--accent-ink);
+          display: grid; place-items: center; }
+  .step.on .icon { background: var(--accent); color: #fff; }
+  .mode { font-size: 13.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--chip); color: var(--sub); }
+  .mode.drive { background: var(--accent); color: #fff; }
+  .num { font-size: 15px; font-weight: 800; color: var(--accent-ink); margin-bottom: 4px; }
+  h3 { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 10px; }
+  p { font-size: 15.5px; line-height: 24px; color: var(--sub); }
+  .gap { width: 30px; display: grid; place-items: center; color: #B4B8C2; }
+  .gap svg { width: 22px; height: 22px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head"><span class="title">이용 흐름</span><span class="caption">정차 중에는 화면으로, 주행 중에는 음성으로</span></div>
+  <div class="row">
+    <div class="step">
+      <div class="top"><div class="icon"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3"/><path d="M4 17h3M11 17h9"/><path d="M13 7a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/><path d="M7 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/></svg></div><span class="mode">정차</span></div>
+      <div class="num">1</div><h3>처음 실행</h3>
+      <p>위치 권한 허용<br>알림 조건 설정<br>지역·유형·가격·면적</p>
+    </div>
+    <div class="gap"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="step on">
+      <div class="top"><div class="icon"><svg class="ico" viewBox="0 0 24 24" style="stroke-width:2.2"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></div><span class="mode drive">주행</span></div>
+      <div class="num">2</div><h3>주변 단지 듣기</h3>
+      <p>버튼 한 번으로<br>차 앞쪽 단지와<br>최근 거래가 음성 안내</p>
+    </div>
+    <div class="gap"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="step on">
+      <div class="top"><div class="icon"><svg class="ico" viewBox="0 0 24 24" style="stroke-width:2.2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></div><span class="mode drive">주행</span></div>
+      <div class="num">3</div><h3>관심 단지 저장</h3>
+      <p>들은 단지는 기록에 남고<br>마음에 들면<br>버튼 한 번으로 저장</p>
+    </div>
+    <div class="gap"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="step">
+      <div class="top"><div class="icon"><svg class="ico" viewBox="0 0 24 24"><path d="M5 11.5L19 5l-6.5 14-1.8-5.7z"/></svg></div><span class="mode">정차</span></div>
+      <div class="num">4</div><h3>단지 비교</h3>
+      <p>상세 · 실거래 내역<br>최근 12개월 가격 추이<br>플레오스 내비로 길 안내</p>
+    </div>
+    <div class="gap"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="step">
+      <div class="top"><div class="icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 12.5V4h8.5L21 13.5 13.5 21z"/><path d="M6.1 8a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0-2.8 0"/></svg></div><span class="mode">매일</span></div>
+      <div class="num">5</div><h3>새 거래 알림</h3>
+      <p>관심 조건에 맞거나<br>저장한 단지에 새 실거래가<br>신고되면 알림</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
